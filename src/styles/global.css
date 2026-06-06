@@ -1,0 +1,87 @@
+@import url('https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=DM+Sans:opsz,wght@9..40,300;9..40,400;9..40,500&display=swap');
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --rose: #A0607E;
+  --rose-light: #F5E6EF;
+  --rose-deep: #8A5070;
+  --sage: #5A7A54;
+  --sage-light: #DBE8D7;
+  --gold: #D4A853;
+  --gold-light: #FAEFD4;
+  --ink: #2C2A35;
+  --surface: #FAF7FB;
+}
+
+* { box-sizing: border-box; }
+
+body {
+  font-family: 'DM Sans', sans-serif;
+  background: var(--surface);
+  color: var(--ink);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+h1, h2, h3 { font-family: 'DM Serif Display', serif; }
+
+/* Scrollbar elegante */
+::-webkit-scrollbar { width: 6px; height: 6px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: #D9A3C5; border-radius: 3px; }
+::-webkit-scrollbar-thumb:hover { background: var(--rose); }
+
+/* Animaciones suaves */
+.fade-in {
+  animation: fadeIn 0.25s ease-out;
+}
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(6px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+/* Badge status */
+.status-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 3px 10px;
+  border-radius: 999px;
+  font-size: 12px;
+  font-weight: 500;
+}
+
+.badge-confirmed  { background: #DBE8D7; color: #3A5236; }
+.badge-pending    { background: #FAEFD4; color: #6D520F; }
+.badge-alert      { background: #FDEAEA; color: #7D2020; }
+.badge-new        { background: #F5E6EF; color: #593047; }
+.badge-active     { background: #DBE8D7; color: #3A5236; }
+
+/* Dot status */
+.dot { width: 7px; height: 7px; border-radius: 50%; display: inline-block; }
+.dot-green  { background: #25D366; }
+.dot-amber  { background: #D4A853; }
+.dot-red    { background: #E24B4A; }
+.dot-gray   { background: #C4BFD0; }
+
+/* WA button */
+.btn-wa {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 5px 12px;
+  background: #E8F8EE;
+  color: #1A7A40;
+  border-radius: 6px;
+  font-size: 12px;
+  font-weight: 500;
+  cursor: pointer;
+  border: 1px solid #B8E8CC;
+  transition: all 0.15s;
+  white-space: nowrap;
+}
+.btn-wa:hover { background: #D0F0DC; }
+.btn-wa-alert { background: #FDEAEA; color: #7D2020; border-color: #F7C1C1; }
+.btn-wa-alert:hover { background: #FAD0D0; }
