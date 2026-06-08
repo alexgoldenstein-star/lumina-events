@@ -1,19 +1,16 @@
 import { NavLink, useNavigate } from 'react-router-dom'
 import { clsx } from 'clsx'
-import {
-  LayoutDashboard, CalendarCheck, Users, MessageCircle,
-  Briefcase, Receipt, FileText, Settings, LogOut, Sparkles
-} from 'lucide-react'
+import { LayoutDashboard, CalendarCheck, MessageCircle, Briefcase, UtensilsCrossed, Users, Bell, Settings, LogOut, Sparkles } from 'lucide-react'
 import { useAuth } from '../../lib/AuthContext'
 
 const navItems = [
-  { label: 'Dashboard',    href: '/',              icon: LayoutDashboard },
-  { label: 'Eventos',      href: '/eventos',        icon: CalendarCheck },
-  { label: 'Invitados',    href: '/invitados',      icon: Users },
-  { label: 'Mensajes WA',  href: '/mensajes',       icon: MessageCircle },
-  { label: 'Proveedores',  href: '/proveedores',    icon: Briefcase },
-  { label: 'Presupuestos', href: '/presupuestos',   icon: Receipt },
-  { label: 'Documentos',   href: '/documentos',     icon: FileText },
+  { label: 'Dashboard',      href: '/',              icon: LayoutDashboard },
+  { label: 'Eventos',        href: '/eventos',        icon: CalendarCheck },
+  { label: 'Mensajes WA',    href: '/mensajes',       icon: MessageCircle },
+  { label: 'Clientes',       href: '/clientes',       icon: Users },
+  { label: 'Proveedores',    href: '/proveedores',    icon: Briefcase },
+  { label: 'Vencimientos',   href: '/vencimientos',   icon: Bell },
+  { label: 'Restricciones',  href: '/restricciones',  icon: UtensilsCrossed },
 ]
 
 export default function Sidebar() {
@@ -31,7 +28,6 @@ export default function Sidebar() {
 
   return (
     <aside className="w-56 min-w-56 bg-white border-r border-ink-100 flex flex-col h-screen sticky top-0">
-      {/* Logo */}
       <div className="px-5 py-6 border-b border-ink-100">
         <div className="flex items-center gap-2">
           <div className="w-8 h-8 rounded-lg bg-rose-500 flex items-center justify-center">
@@ -44,7 +40,6 @@ export default function Sidebar() {
         </div>
       </div>
 
-      {/* Nav */}
       <nav className="flex-1 px-3 py-4 space-y-0.5 overflow-y-auto">
         {navItems.map(({ label, href, icon: Icon }) => (
           <NavLink
@@ -53,9 +48,7 @@ export default function Sidebar() {
             end={href === '/'}
             className={({ isActive }) => clsx(
               'flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm transition-all duration-150 group',
-              isActive
-                ? 'bg-rose-50 text-rose-700 font-medium'
-                : 'text-ink-500 hover:bg-rose-50 hover:text-rose-600'
+              isActive ? 'bg-rose-50 text-rose-700 font-medium' : 'text-ink-500 hover:bg-rose-50 hover:text-rose-600'
             )}
           >
             {({ isActive }) => (
@@ -68,11 +61,13 @@ export default function Sidebar() {
         ))}
       </nav>
 
-      {/* User */}
       <div className="px-3 py-4 border-t border-ink-100 space-y-1">
         <NavLink
           to="/configuracion"
-          className="flex items-center gap-3 px-3 py-2 rounded-lg text-sm text-ink-500 hover:bg-rose-50 hover:text-rose-600 transition-all"
+          className={({ isActive }) => clsx(
+            'flex items-center gap-3 px-3 py-2 rounded-lg text-sm transition-all',
+            isActive ? 'bg-rose-50 text-rose-700' : 'text-ink-500 hover:bg-rose-50 hover:text-rose-600'
+          )}
         >
           <Settings size={16} className="text-ink-400" />
           Configuración

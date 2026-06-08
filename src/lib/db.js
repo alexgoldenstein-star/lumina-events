@@ -175,3 +175,149 @@ export function subscribeToDocumentos(userId, eventId, callback) {
   })
   return () => off(r)
 }
+
+// ─── CLIENTES (panel cliente) ─────────────────────────────────────────────────
+
+export const clientesRef = (userId) => ref(db, `users/${userId}/clientes`)
+export const clienteRef  = (userId, clienteId) => ref(db, `users/${userId}/clientes/${clienteId}`)
+
+export async function createCliente(userId, data) {
+  const newRef = push(clientesRef(userId))
+  const cliente = {
+    ...data,
+    id: newRef.key,
+    createdAt: new Date().toISOString(),
+    accessCode: Math.random().toString(36).slice(2, 8).toUpperCase(),
+  }
+  await set(newRef, cliente)
+  return cliente
+}
+
+export async function updateCliente(userId, clienteId, data) {
+  await update(clienteRef(userId, clienteId), { ...data, updatedAt: new Date().toISOString() })
+}
+
+export async function deleteCliente(userId, clienteId) {
+  await remove(clienteRef(userId, clienteId))
+}
+
+export function subscribeToClientes(userId, callback) {
+  const r = clientesRef(userId)
+  onValue(r, snap => {
+    const data = snap.val() || {}
+    callback(Object.values(data))
+  })
+  return () => off(r)
+}
+
+// ─── CHECKLIST / TAREAS ───────────────────────────────────────────────────────
+
+export const tareasRef = (userId, eventId) => ref(db, `users/${userId}/eventos/${eventId}/tareas`)
+export const tareaRef  = (userId, eventId, tareaId) => ref(db, `users/${userId}/eventos/${eventId}/tareas/${tareaId}`)
+
+export async function createTarea(userId, eventId, data) {
+  const newRef = push(tareasRef(userId, eventId))
+  const tarea = { ...data, id: newRef.key, done: false, createdAt: new Date().toISOString() }
+  await set(newRef, tarea)
+  return tarea
+}
+
+export async function toggleTarea(userId, eventId, tareaId, done) {
+  await update(tareaRef(userId, eventId, tareaId), { done, updatedAt: new Date().toISOString() })
+}
+
+export async function deleteTarea(userId, eventId, tareaId) {
+  await remove(tareaRef(userId, eventId, tareaId))
+}
+
+export function subscribeToTareas(userId, eventId, callback) {
+  const r = tareasRef(userId, eventId)
+  onValue(r, snap => {
+    const data = snap.val() || {}
+    callback(Object.values(data).sort((a, b) => new Date(a.createdAt) - new Date(b.createdAt)))
+  })
+  return () => off(r)
+}
+
+// ─── GASTOS (tickets) ─────────────────────────────────────────────────────────
+
+export const gastosRef = (userId, eventId) => ref(db, `users/${userId}/eventos/${eventId}/gastos`)
+export const gastoRef  = (userId, eventId, gastoId) => ref(db, `users/${userId}/eventos/${eventId}/gastos/${gastoId}`)
+
+export async function createGasto(userId, eventId, data) {
+  const newRef = push(gastosRef(userId, eventId))
+  const gasto = { ...data, id: newRef.key, createdAt: new Date().toISOString() }
+  await set(newRef, gasto)
+  return gasto
+}
+
+export async function updateGasto(userId, eventId, gastoId, data) {
+  await update(gastoRef(userId, eventId, gastoId), { ...data })
+}
+
+export async function deleteGasto(userId, eventId, gastoId) {
+  await remove(gastoRef(userId, eventId, gastoId))
+}
+
+export function subscribeToGastos(userId, eventId, callback) {
+  const r = gastosRef(userId, eventId)
+  onValue(r, snap => {
+    const data = snap.val() || {}
+    callback(Object.values(data).sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt)))
+  })
+  return () => off(r)
+}
+
+// ─── MESAS ────────────────────────────────────────────────────────────────────
+
+export const mesasRef = (userId, eventId) => ref(db, `users/${userId}/eventos/${eventId}/mesas`)
+export const mesaRef  = (userId, eventId, mesaId) => ref(db, `users/${userId}/eventos/${eventId}/mesas/${mesaId}`)
+
+export async function createMesa(userId, eventId, data) {
+  const newRef = push(mesasRef(userId, eventId))
+  const mesa = { ...data, id: newRef.key, createdAt: new Date().toISOString() }
+  await set(newRef, mesa)
+  return mesa
+}
+
+export async function updateMesa(userId, eventId, mesaId, data) {
+  await update(mesaRef(userId, eventId, mesaId), data)
+}
+
+export async function deleteMesa(userId, eventId, mesaId) {
+  await remove(mesaRef(userId, eventId, mesaId))
+}
+
+export function subscribeToMesas(userId, eventId, callback) {
+  const r = mesasRef(userId, eventId)
+  onValue(r, snap => {
+    const data = snap.val() || {}
+    callback(Object.values(data))
+  })
+  return () => off(r)
+}
+
+// ─── VENCIMIENTOS ─────────────────────────────────────────────────────────────
+
+export const vencimientosRef = (userId) => ref(db, `users/${userId}/vencimientos`)
+export const vencimientoRef  = (userId, vId) => ref(db, `users/${userId}/vencimientos/${vId}`)
+
+export async function createVencimiento(userId, data) {
+  const newRef = push(vencimientosRef(userId))
+  const v = { ...data, id: newRef.key, notified: false, createdAt: new Date().toISOString() }
+  await set(newRef, v)
+  return v
+}
+
+export async function deleteVencimiento(userId, vId) {
+  await remove(vencimientoRef(userId, vId))
+}
+
+export function subscribeToVencimientos(userId, callback) {
+  const r = vencimientosRef(userId)
+  onValue(r, snap => {
+    const data = snap.val() || {}
+    callback(Object.values(data).sort((a, b) => new Date(a.dueDate) - new Date(b.dueDate)))
+  })
+  return () => off(r)
+}
