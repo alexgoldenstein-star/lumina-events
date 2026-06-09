@@ -10,12 +10,30 @@
 export function normalizePhone(raw) {
   if (!raw) return null
   const digits = raw.replace(/\D/g, '')
-  // Ya tiene código de país completo
+  if (!digits) return null
+
+  // Ya formateado correctamente: 549XXXXXXXXXX (13 dígitos)
   if (digits.startsWith('549') && digits.length === 13) return digits
-  if (digits.startsWith('54') && digits.length === 12)  return '549' + digits.slice(2)
-  // Número sin código de país
-  if (digits.length === 10) return '549' + digits   // ej: 1112345678
-  if (digits.length === 8)  return '54911' + digits  // ej: 12345678 (CABA fijo-like)
+
+  // Tiene +54 pero sin el 9 móvil: 54XXXXXXXXXX (12 dígitos)
+  if (digits.startsWith('54') && digits.length === 12) return '549' + digits.slice(2)
+
+  // Tiene 54 y el 9: 549XXXXXXXXX pero le falta un dígito (11 dígitos) → raro, igual lo devolvemos
+  if (digits.startsWith('549') && digits.length === 12) return digits
+
+  // Número local con 0 adelante: 011XXXXXXXX o 0351XXXXXXX
+  if (digits.startsWith('0') && digits.length >= 10) {
+    const sinCero = digits.slice(1) // saca el 0 → 11XXXXXXXX o 351XXXXXXX
+    return '549' + sinCero
+  }
+
+  // 10 dígitos sin código: 11XXXXXXXX / 351XXXXXXX / 221XXXXXXX
+  if (digits.length === 10) return '549' + digits
+
+  // 8 dígitos (CABA sin área): 1234-5678 → asume 011
+  if (digits.length === 8) return '54911' + digits
+
+  // Cualquier otra cosa — agregamos 549 y lo intentamos
   return '549' + digits
 }
 
