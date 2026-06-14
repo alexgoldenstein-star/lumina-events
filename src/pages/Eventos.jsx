@@ -45,7 +45,7 @@ export default function Eventos() {
         title="Mis Eventos"
         subtitle={`${eventos.length} evento${eventos.length !== 1 ? 's' : ''} en total`}
         actions={
-          <Link to="/eventos/nuevo">
+          <Link to="/app/eventos/nuevo">
             <Button><Plus size={15} /> Nuevo Evento</Button>
           </Link>
         }
@@ -65,7 +65,7 @@ export default function Eventos() {
               title="Todavía no hay eventos"
               description="Creá tu primer evento y empezá a gestionar invitados, proveedores y presupuestos desde un solo lugar."
               action={
-                <Link to="/eventos/nuevo">
+                <Link to="/app/eventos/nuevo">
                   <Button><Plus size={15} /> Crear primer evento</Button>
                 </Link>
               }

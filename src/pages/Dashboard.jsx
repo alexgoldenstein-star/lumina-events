@@ -73,7 +73,7 @@ export default function Dashboard() {
       <PageHeader
         title={`${saludo}${nombre ? ', ' + nombre : ''} ✨`}
         subtitle={`Tenés ${activos.length} evento${activos.length !== 1 ? 's' : ''} activo${activos.length !== 1 ? 's' : ''}`}
-        actions={<Link to="/eventos/nuevo"><Button>+ Nuevo evento</Button></Link>}
+        actions={<Link to="/app/eventos/nuevo"><Button>+ Nuevo evento</Button></Link>}
       />
 
       <div className="p-7 space-y-6">
@@ -101,7 +101,7 @@ export default function Dashboard() {
         {/* Próximos eventos */}
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
           <Card>
-            <CardHeader action={<Link to="/eventos" className="text-xs text-rose-500 hover:underline">Ver todos</Link>}>
+            <CardHeader action={<Link to="/app/eventos" className="text-xs text-rose-500 hover:underline">Ver todos</Link>}>
               <CalendarCheck size={15} className="text-rose-400" />
               Próximos eventos
             </CardHeader>
@@ -110,7 +110,7 @@ export default function Dashboard() {
             ) : proximos.length === 0 ? (
               <CardBody>
                 <p className="text-sm text-ink-400 text-center py-6">Aún no hay eventos creados</p>
-                <Link to="/eventos/nuevo" className="flex justify-center">
+                <Link to="/app/eventos/nuevo" className="flex justify-center">
                   <Button size="sm">Crear primer evento</Button>
                 </Link>
               </CardBody>
@@ -158,7 +158,7 @@ export default function Dashboard() {
               Accesos rápidos
             </CardHeader>
             <CardBody className="space-y-3">
-              <Link to="/eventos/nuevo">
+              <Link to="/app/eventos/nuevo">
                 <div className="flex items-center gap-3 p-3 rounded-xl border border-ink-100 hover:border-rose-200 hover:bg-rose-50 transition-all cursor-pointer group">
                   <div className="w-8 h-8 rounded-lg bg-rose-50 group-hover:bg-rose-100 flex items-center justify-center text-rose-500 transition-colors">
                     <CalendarCheck size={15} />
