@@ -70,7 +70,7 @@ export default function EventoForm({ evento }) {
       if (isEdit) { await updateEvento(user.uid, evento.id, form); eventoId = evento.id }
       else { const created = await createEvento(user.uid, form); eventoId = created.id }
       if (excelPreview && eventoId) { setImporting(true); await addManyInvitados(user.uid, eventoId, excelPreview.guests) }
-      navigate(`/eventos/${eventoId}`)
+      navigate(`/app/eventos/${eventoId}`)
     } catch (err) {
       setErrors({ general: err.message })
     } finally { setSaving(false); setImporting(false) }
@@ -154,7 +154,7 @@ export default function EventoForm({ evento }) {
         </Card>
 
         <div className="flex gap-3 justify-end">
-          <Button variant="outline" onClick={()=>navigate('/eventos')}>Cancelar</Button>
+          <Button variant="outline" onClick={()=>navigate('/app/eventos')}>Cancelar</Button>
           <Button onClick={handleSubmit} loading={saving||importing}>
             {importing?'Importando...':saving?'Guardando...':isEdit?'Guardar cambios':'Crear Evento'}
           </Button>

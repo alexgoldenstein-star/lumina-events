@@ -44,7 +44,7 @@ function PrivateRoute({ children, permiso }) {
 function PublicRoute({ children }) {
   const { user, loading } = useAuth()
   if (loading) return <div className="min-h-screen flex items-center justify-center"><Spinner size="lg"/></div>
-  if (user) return <Navigate to="/" replace/>
+  if (user) return <Navigate to="/app" replace/>
   return children
 }
 

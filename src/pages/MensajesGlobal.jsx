@@ -175,7 +175,7 @@ export default function MensajesGlobal() {
                     <p className="text-sm font-medium text-ink-800">{guest.fullName}</p>
                     <p className="text-xs text-ink-400">{guest.whatsapp}</p>
                   </div>
-                  <Link to={`/eventos/${evento.id}`}>
+                  <Link to={`/app/eventos/${evento.id}`}>
                     <Badge variant="pink" className="cursor-pointer hover:opacity-80">{evento.nombre}</Badge>
                   </Link>
                   <button
@@ -229,7 +229,7 @@ export default function MensajesGlobal() {
                     <p className="text-xs text-ink-400">{guest.whatsapp}</p>
                     {guest.menu && <Badge variant="pink" className="mt-1 text-[10px]">{guest.menu}</Badge>}
                   </div>
-                  <Link to={`/eventos/${evento.id}`}>
+                  <Link to={`/app/eventos/${evento.id}`}>
                     <Badge variant="gray" className="cursor-pointer hover:opacity-80 hidden sm:inline-flex">{evento.nombre}</Badge>
                   </Link>
                   {needsFollowUp(guest) && <Badge variant="red" className="text-[10px]">+72hs</Badge>}

@@ -84,7 +84,7 @@ export default function Eventos() {
                 <Card
                   key={evento.id}
                   className="hover:shadow-sm transition-shadow cursor-pointer"
-                  onClick={() => navigate(`/eventos/${evento.id}`)}
+                  onClick={() => navigate(`/app/eventos/${evento.id}`)}
                 >
                   <div className="flex items-center gap-4 p-5">
                     <div className={`w-12 h-12 rounded-xl flex items-center justify-center flex-shrink-0 ${cfg.color}`}>
@@ -121,7 +121,7 @@ export default function Eventos() {
                     <div className="flex items-center gap-2 flex-shrink-0">
                       <Button
                         variant="ghost" size="sm"
-                        onClick={e => { e.stopPropagation(); navigate(`/eventos/${evento.id}/editar`) }}
+                        onClick={e => { e.stopPropagation(); navigate(`/app/eventos/${evento.id}/editar`) }}
                       >
                         <Edit size={14} />
                       </Button>
