@@ -8,18 +8,17 @@ import {
 import { useAuth } from '../../lib/AuthContext'
 import { rutasPermitidas } from '../../lib/roles'
 
-// Map using /app/* paths to match roles.js
 const ICONS = {
-  '/app':              LayoutDashboard,
-  '/app/eventos':      CalendarCheck,
-  '/app/calendario':   CalendarDays,
-  '/app/mensajes':     MessageCircle,
-  '/app/clientes':     Users,
-  '/app/proveedores':  Briefcase,
-  '/app/vencimientos': Bell,
-  '/app/restricciones':UtensilsCrossed,
-  '/app/usuarios':     UserCog,
-  '/app/configuracion':Settings,
+  '/app':               LayoutDashboard,
+  '/app/eventos':       CalendarCheck,
+  '/app/calendario':    CalendarDays,
+  '/app/mensajes':      MessageCircle,
+  '/app/clientes':      Users,
+  '/app/proveedores':   Briefcase,
+  '/app/vencimientos':  Bell,
+  '/app/restricciones': UtensilsCrossed,
+  '/app/usuarios':      UserCog,
+  '/app/configuracion': Settings,
 }
 
 export default function Sidebar() {
@@ -28,9 +27,10 @@ export default function Sidebar() {
 
   async function handleLogout() { await logout(); navigate('/login') }
 
-  const rutas = rutasPermitidas(profile)
+  // Si profile aún no cargó, mostrar nav completa (admin fallback)
+  const effectiveProfile = profile || { role: 'admin' }
+  const rutas = rutasPermitidas(effectiveProfile)
 
-  // Fallback: si profile aún no cargó, mostrar nav mínima
   const mainNav   = rutas.filter(r => r.href !== '/app/configuracion' && r.href !== '/app/usuarios')
   const bottomNav = rutas.filter(r => r.href === '/app/configuracion' || r.href === '/app/usuarios')
 
@@ -60,10 +60,6 @@ export default function Sidebar() {
 
       {/* Nav */}
       <nav className="flex-1 px-3 py-4 space-y-0.5 overflow-y-auto">
-        {mainNav.length === 0 && (
-          // Fallback mientras carga el profile
-          <div className="px-3 py-2 text-xs text-ink-400">Cargando...</div>
-        )}
         {mainNav.map(({ href, label }) => {
           const Icon = ICONS[href] || LayoutDashboard
           return (
@@ -93,21 +89,16 @@ export default function Sidebar() {
             <NavLink key={href} to={href}
               className={({ isActive }) => clsx(
                 'flex items-center gap-3 px-3 py-2 rounded-lg text-sm transition-all',
-                isActive
-                  ? 'bg-warm-100 text-warm-800 font-medium'
-                  : 'text-ink-500 hover:bg-warm-50 hover:text-warm-700'
+                isActive ? 'bg-warm-100 text-warm-800 font-medium' : 'text-ink-500 hover:bg-warm-50 hover:text-warm-700'
               )}>
               <Icon size={15} className="text-ink-400"/> {label}
             </NavLink>
           )
         })}
-        <button
-          onClick={handleLogout}
+        <button onClick={handleLogout}
           className="w-full flex items-center gap-3 px-3 py-2 rounded-lg text-sm text-ink-500 hover:bg-red-50 hover:text-red-600 transition-all">
           <LogOut size={15} className="text-ink-400"/> Cerrar sesión
         </button>
-
-        {/* User chip */}
         <div className="flex items-center gap-3 px-3 py-3 mt-2">
           <div className="w-8 h-8 rounded-full bg-gradient-to-br from-warm-300 to-warm-600 flex items-center justify-center text-white text-xs font-medium flex-shrink-0">
             {initials}
