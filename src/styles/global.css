@@ -4,15 +4,15 @@
 @tailwind utilities;
 
 :root {
-  --rose: #A0607E;
-  --rose-light: #F5E6EF;
-  --rose-deep: #8A5070;
-  --sage: #5A7A54;
-  --sage-light: #DBE8D7;
-  --gold: #D4A853;
+  --warm:       #B87E56;
+  --warm-light: #F5EAE0;
+  --warm-deep:  #9A6642;
+  --sage:       #66845C;
+  --sage-light: #E3EBE0;
+  --gold:       #D4A034;
   --gold-light: #FAEFD4;
-  --ink: #2C2A35;
-  --surface: #FAF7FB;
+  --ink:        #322A25;
+  --surface:    #FDFAF7;
 }
 
 * { box-sizing: border-box; }
@@ -22,66 +22,29 @@ body {
   background: var(--surface);
   color: var(--ink);
   -webkit-font-smoothing: antialiased;
-  -moz-osx-font-smoothing: grayscale;
 }
 
 h1, h2, h3 { font-family: 'DM Serif Display', serif; }
 
-/* Scrollbar elegante */
-::-webkit-scrollbar { width: 6px; height: 6px; }
+::-webkit-scrollbar { width: 5px; height: 5px; }
 ::-webkit-scrollbar-track { background: transparent; }
-::-webkit-scrollbar-thumb { background: #D9A3C5; border-radius: 3px; }
-::-webkit-scrollbar-thumb:hover { background: var(--rose); }
+::-webkit-scrollbar-thumb { background: #D5CBC2; border-radius: 3px; }
 
-/* Animaciones suaves */
 .fade-in {
-  animation: fadeIn 0.25s ease-out;
+  animation: fadeIn 0.2s ease-out;
 }
 @keyframes fadeIn {
-  from { opacity: 0; transform: translateY(6px); }
+  from { opacity: 0; transform: translateY(5px); }
   to   { opacity: 1; transform: translateY(0); }
 }
 
-/* Badge status */
-.status-badge {
-  display: inline-flex;
-  align-items: center;
-  gap: 5px;
-  padding: 3px 10px;
-  border-radius: 999px;
-  font-size: 12px;
-  font-weight: 500;
-}
-
-.badge-confirmed  { background: #DBE8D7; color: #3A5236; }
-.badge-pending    { background: #FAEFD4; color: #6D520F; }
-.badge-alert      { background: #FDEAEA; color: #7D2020; }
-.badge-new        { background: #F5E6EF; color: #593047; }
-.badge-active     { background: #DBE8D7; color: #3A5236; }
-
-/* Dot status */
-.dot { width: 7px; height: 7px; border-radius: 50%; display: inline-block; }
-.dot-green  { background: #25D366; }
-.dot-amber  { background: #D4A853; }
-.dot-red    { background: #E24B4A; }
-.dot-gray   { background: #C4BFD0; }
-
-/* WA button */
+/* WA buttons */
 .btn-wa {
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-  padding: 5px 12px;
-  background: #E8F8EE;
-  color: #1A7A40;
-  border-radius: 6px;
-  font-size: 12px;
-  font-weight: 500;
-  cursor: pointer;
-  border: 1px solid #B8E8CC;
-  transition: all 0.15s;
-  white-space: nowrap;
+  display: inline-flex; align-items: center; gap: 6px;
+  padding: 5px 12px; background: #E8F8EE; color: #1A7A40;
+  border-radius: 6px; font-size: 12px; font-weight: 500;
+  cursor: pointer; border: 1px solid #B8E8CC; transition: all 0.15s;
 }
 .btn-wa:hover { background: #D0F0DC; }
-.btn-wa-alert { background: #FDEAEA; color: #7D2020; border-color: #F7C1C1; }
-.btn-wa-alert:hover { background: #FAD0D0; }
+.btn-wa-alert { background: #FDF0E8; color: #8B4A1E; border-color: #F0C8A0; }
+.btn-wa-alert:hover { background: #FAE4D0; }
