@@ -10,7 +10,6 @@
   --sage:       #66845C;
   --sage-light: #E3EBE0;
   --gold:       #D4A034;
-  --gold-light: #FAEFD4;
   --ink:        #322A25;
   --surface:    #FDFAF7;
 }
@@ -22,19 +21,23 @@ body {
   background: var(--surface);
   color: var(--ink);
   -webkit-font-smoothing: antialiased;
+  /* PWA: evita el rebote en iOS */
+  overscroll-behavior: none;
 }
+
+/* PWA safe areas para notch y home indicator */
+.pb-safe { padding-bottom: env(safe-area-inset-bottom, 16px); }
+.pt-safe { padding-top:    env(safe-area-inset-top,    0px); }
 
 h1, h2, h3 { font-family: 'DM Serif Display', serif; }
 
-::-webkit-scrollbar { width: 5px; height: 5px; }
+::-webkit-scrollbar { width: 4px; height: 4px; }
 ::-webkit-scrollbar-track { background: transparent; }
-::-webkit-scrollbar-thumb { background: #D5CBC2; border-radius: 3px; }
+::-webkit-scrollbar-thumb { background: #D5CBC2; border-radius: 2px; }
 
-.fade-in {
-  animation: fadeIn 0.2s ease-out;
-}
+.fade-in { animation: fadeIn 0.2s ease-out; }
 @keyframes fadeIn {
-  from { opacity: 0; transform: translateY(5px); }
+  from { opacity: 0; transform: translateY(4px); }
   to   { opacity: 1; transform: translateY(0); }
 }
 
@@ -44,7 +47,12 @@ h1, h2, h3 { font-family: 'DM Serif Display', serif; }
   padding: 5px 12px; background: #E8F8EE; color: #1A7A40;
   border-radius: 6px; font-size: 12px; font-weight: 500;
   cursor: pointer; border: 1px solid #B8E8CC; transition: all 0.15s;
+  white-space: nowrap;
 }
 .btn-wa:hover { background: #D0F0DC; }
 .btn-wa-alert { background: #FDF0E8; color: #8B4A1E; border-color: #F0C8A0; }
 .btn-wa-alert:hover { background: #FAE4D0; }
+
+/* PWA: tap highlight */
+* { -webkit-tap-highlight-color: transparent; }
+button, a { touch-action: manipulation; }
