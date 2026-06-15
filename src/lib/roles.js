@@ -98,6 +98,8 @@ export function rutasPermitidas(profile) {
     { show: t('verEventos'),        href:'/vencimientos', label:'Vencimientos' },
     { show: t('verInvitados'),      href:'/restricciones',label:'Restricciones'},
     { show: t('gestionarUsuarios'), href:'/usuarios',     label:'Usuarios'     },
+    { show: t('gestionarUsuarios'), href:'/exportar',     label:'Exportar datos'},
     { show: t('verConfiguracion'),  href:'/configuracion',label:'Configuración'},
   ].filter(r => r.show)
 }
+

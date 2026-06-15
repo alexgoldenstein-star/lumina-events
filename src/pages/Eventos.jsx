@@ -18,7 +18,7 @@ const TIPO_CONFIG = {
 }
 
 export default function Eventos() {
-  const { user } = useAuth()
+  const { user, teamOwner } = useAuth()
   const [eventos,        setEventos]        = useState([])
   const [sharedEventos,  setSharedEventos]  = useState([])
   const [loading,        setLoading]        = useState(true)
