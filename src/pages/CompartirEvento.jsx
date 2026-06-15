@@ -12,12 +12,12 @@ const ACCESS_ROLES = [
 ]
 
 export default function CompartirEvento({ eventoId, eventoNombre, open, onClose }) {
-  const { user, ownerUid } = useAuth()
+  const { user, teamOwner } = useAuth()
   const [members,   setMembers]   = useState([])
   const [access,    setAccess]    = useState({})
   const [saving,    setSaving]    = useState({})
 
-  const adminUid = ownerUid || user?.uid
+  const adminUid = teamOwner || user?.uid
 
   useEffect(() => {
     if (!adminUid || !open) return
