@@ -343,3 +343,53 @@ export async function getInvite(code) {
 export async function markInviteUsed(code, userId) {
   await update(inviteRef(code), { used: true, usedBy: userId, usedAt: ts() })
 }
+
+// ─── EVENTOS COMPARTIDOS ───────────────────────────────────────────────────────
+// Guarda qué usuarios tienen acceso a qué eventos
+// Estructura: eventAccess/{eventoOwnerId}/{eventoId}/{userId} = { role, addedAt }
+
+export const eventAccessRef = (ownerUid, eventoId) =>
+  ref(db, `eventAccess/${ownerUid}/${eventoId}`)
+
+export async function shareEventoWith(ownerUid, eventoId, targetUid, role = 'viewer') {
+  await set(
+    ref(db, `eventAccess/${ownerUid}/${eventoId}/${targetUid}`),
+    { role, addedAt: ts() }
+  )
+  // Also add reverse index so targetUid can find shared events
+  await set(
+    ref(db, `sharedWith/${targetUid}/${ownerUid}_${eventoId}`),
+    { ownerUid, eventoId, role, addedAt: ts() }
+  )
+}
+
+export async function unshareEventoWith(ownerUid, eventoId, targetUid) {
+  await remove(ref(db, `eventAccess/${ownerUid}/${eventoId}/${targetUid}`))
+  await remove(ref(db, `sharedWith/${targetUid}/${ownerUid}_${eventoId}`))
+}
+
+export function subscribeToEventAccess(ownerUid, eventoId, cb) {
+  const r = eventAccessRef(ownerUid, eventoId)
+  onValue(r, snap => cb(snap.val() || {}))
+  return () => off(r)
+}
+
+// Get all events shared WITH a user (from other owners)
+export function subscribeToSharedEventos(uid, cb) {
+  const r = ref(db, `sharedWith/${uid}`)
+  onValue(r, async snap => {
+    const data = snap.val() || {}
+    const entries = Object.values(data)
+    if (!entries.length) { cb([]); return }
+    // Fetch each shared evento
+    const eventos = await Promise.all(
+      entries.map(async ({ ownerUid, eventoId, role }) => {
+        const eSnap = await get(ref(db, `users/${ownerUid}/eventos/${eventoId}`))
+        if (!eSnap.exists()) return null
+        return { ...eSnap.val(), _shared: true, _ownerUid: ownerUid, _sharedRole: role }
+      })
+    )
+    cb(eventos.filter(Boolean))
+  })
+  return () => off(r)
+}
