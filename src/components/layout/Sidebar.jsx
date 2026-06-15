@@ -7,6 +7,7 @@ import {
 } from 'lucide-react'
 import { useAuth } from '../../lib/AuthContext'
 import { rutasPermitidas } from '../../lib/roles'
+import LogoJR from '../ui/LogoJR'
 
 const ICONS = {
   '/dashboard':     LayoutDashboard,
@@ -22,22 +23,6 @@ const ICONS = {
   '/configuracion': Settings,
 }
 
-// Logo tipográfico de JR — replica el estilo del logo real
-function LogoJR() {
-  return (
-    <div className="flex flex-col">
-      <span className="text-[11px] font-light tracking-[0.25em] text-ink-900 uppercase"
-        style={{fontFamily:'Georgia, serif', letterSpacing:'0.22em'}}>
-        JAZMIN ROSENBERG
-      </span>
-      <span className="text-[8px] tracking-[0.2em] text-ink-400 uppercase mt-0.5"
-        style={{letterSpacing:'0.2em'}}>
-        ORGANIZACIÓN DE EVENTOS
-      </span>
-    </div>
-  )
-}
-
 export default function Sidebar({ onClose }) {
   const { user, profile, logout, hideComisiones } = useAuth()
   const navigate = useNavigate()
@@ -45,32 +30,30 @@ export default function Sidebar({ onClose }) {
   async function handleLogout() { await logout(); navigate('/login') }
 
   const effectiveProfile = profile || { role: 'admin' }
-  const rutas = rutasPermitidas(effectiveProfile)
-
-  // Separar nav principal de bottom items
-  const bottomHrefs = ['/configuracion', '/usuarios', '/exportar']
-  const mainNav  = rutas.filter(r => !bottomHrefs.includes(r.href))
-  const bottomNav= rutas.filter(r => bottomHrefs.includes(r.href))
+  const rutas     = rutasPermitidas(effectiveProfile)
+  const bottomH   = ['/configuracion','/usuarios','/exportar']
+  const mainNav   = rutas.filter(r => !bottomH.includes(r.href))
+  const bottomNav = rutas.filter(r =>  bottomH.includes(r.href))
 
   const initials = profile?.nombre
     ? profile.nombre.split(' ').map(n=>n[0]).join('').slice(0,2).toUpperCase()
     : user?.email?.[0]?.toUpperCase() || 'U'
 
   return (
-    <aside className="w-60 min-w-60 bg-white border-r border-nude-200 flex flex-col h-screen shadow-sm">
-      {/* Header con logo */}
+    <aside className="w-60 min-w-60 bg-white border-r border-nude-100 flex flex-col h-screen">
+      {/* Logo */}
       <div className="px-5 py-5 border-b border-nude-100 flex items-center justify-between">
-        <LogoJR/>
+        <LogoJR size="sm"/>
         {onClose && (
-          <button onClick={onClose} className="lg:hidden p-1.5 rounded-lg hover:bg-nude-100 text-ink-500 transition-colors ml-2 flex-shrink-0">
+          <button onClick={onClose} className="lg:hidden p-1.5 rounded-lg hover:bg-nude-100 text-ink-400 transition-colors ml-3 flex-shrink-0">
             <X size={16}/>
           </button>
         )}
       </div>
 
       {hideComisiones && (
-        <div className="mx-4 mt-2 flex items-center gap-1.5 text-[10px] text-warm-700 bg-warm-100 px-2.5 py-1.5 rounded-lg">
-          <span>🙈</span> Modo cliente activo
+        <div className="mx-4 mt-3 text-[10px] text-warm-700 bg-warm-50 border border-warm-200 px-3 py-2 rounded-lg flex items-center gap-1.5">
+          🙈 Vista cliente activa — comisiones ocultas
         </div>
       )}
 
@@ -81,15 +64,15 @@ export default function Sidebar({ onClose }) {
           return (
             <NavLink key={href} to={href} end={href==='/dashboard'}
               className={({ isActive }) => clsx(
-                'flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm transition-all group',
+                'flex items-center gap-3 px-3 py-2.5 rounded-lg text-[13px] tracking-wide transition-all group',
                 isActive
                   ? 'bg-nude-100 text-ink-900 font-medium'
                   : 'text-ink-400 hover:bg-nude-50 hover:text-ink-800'
               )}>
               {({ isActive }) => (
                 <>
-                  <Icon size={15} className={isActive ? 'text-ink-700' : 'text-ink-300 group-hover:text-ink-600'}/>
-                  <span className="text-[13px] tracking-wide">{label}</span>
+                  <Icon size={15} className={isActive?'text-ink-700':'text-ink-300 group-hover:text-ink-600'}/>
+                  {label}
                 </>
               )}
             </NavLink>
@@ -104,19 +87,17 @@ export default function Sidebar({ onClose }) {
           return (
             <NavLink key={href} to={href}
               className={({ isActive }) => clsx(
-                'flex items-center gap-3 px-3 py-2 rounded-lg text-[13px] transition-all tracking-wide',
-                isActive ? 'bg-nude-100 text-ink-900 font-medium' : 'text-ink-400 hover:bg-nude-50 hover:text-ink-800'
+                'flex items-center gap-3 px-3 py-2 rounded-lg text-[13px] tracking-wide transition-all',
+                isActive?'bg-nude-100 text-ink-900 font-medium':'text-ink-400 hover:bg-nude-50 hover:text-ink-800'
               )}>
               <Icon size={14} className="text-ink-300"/> {label}
             </NavLink>
           )
         })}
         <button onClick={handleLogout}
-          className="w-full flex items-center gap-3 px-3 py-2 rounded-lg text-[13px] text-ink-400 hover:bg-red-50 hover:text-red-500 transition-all tracking-wide">
+          className="w-full flex items-center gap-3 px-3 py-2 rounded-lg text-[13px] text-ink-400 hover:bg-red-50 hover:text-red-500 transition-all">
           <LogOut size={14} className="text-ink-300"/> Cerrar sesión
         </button>
-
-        {/* User chip */}
         <div className="flex items-center gap-3 px-2 py-3 mt-1 border-t border-nude-100">
           <div className="w-8 h-8 rounded-full bg-nude-200 flex items-center justify-center text-ink-600 text-xs font-medium flex-shrink-0 border border-nude-300">
             {initials}

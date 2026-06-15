@@ -1,4 +1,4 @@
-import { initializeApp } from 'firebase/app'
+import { initializeApp, getApps } from 'firebase/app'
 import { getAuth } from 'firebase/auth'
 import { getDatabase } from 'firebase/database'
 import { getStorage } from 'firebase/storage'
@@ -13,15 +13,16 @@ const firebaseConfig = {
   appId:             import.meta.env.VITE_FIREBASE_APP_ID,
 }
 
-// Validate all config values are present
 const missing = Object.entries(firebaseConfig).filter(([,v]) => !v).map(([k]) => k)
-if (missing.length > 0) {
-  console.error('⚠️ Firebase config missing:', missing)
-}
+if (missing.length > 0) console.error('⚠️ Firebase config missing:', missing)
 
+// App principal
 const app = initializeApp(firebaseConfig)
-
 export const auth    = getAuth(app)
 export const db      = getDatabase(app)
 export const storage = getStorage(app)
 export default app
+
+// App secundaria — para crear usuarios sin desloguear al admin
+const secondaryApp = initializeApp(firebaseConfig, 'secondary')
+export const authSecondary = getAuth(secondaryApp)
