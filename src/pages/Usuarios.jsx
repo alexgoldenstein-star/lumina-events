@@ -1,7 +1,9 @@
 import { useEffect, useState } from 'react'
-import { Plus, Trash2, Edit2, Copy, Check, Users, Shield, Mail, RefreshCw } from 'lucide-react'
+import { Plus, Trash2, Edit2, Check, Users, Shield, RefreshCw, Eye, EyeOff } from 'lucide-react'
+import { createUserWithEmailAndPassword, updateProfile } from 'firebase/auth'
+import { ref, set, get, update, remove, onValue, off } from 'firebase/database'
+import { auth, db } from '../lib/firebase'
 import { useAuth } from '../lib/AuthContext'
-import { subscribeToTeam, createTeamMember, updateTeamMember, deleteTeamMember } from '../lib/db'
 import { ROLES, PERMISOS, PERMISOS_DEFAULT } from '../lib/roles'
 import { Card, CardHeader, CardBody, Button, Input, Modal, Alert, Badge } from '../components/ui'
 import PageHeader from '../components/layout/PageHeader'
@@ -21,136 +23,218 @@ function PermisoCheck({ id, checked, label, onChange }) {
   )
 }
 
-const emptyForm = { nombre:'', email:'', role:'empleada', permisos:[...PERMISOS_DEFAULT.empleada] }
+const emptyForm = {
+  nombre: '', email: '', password: '', role: 'empleada',
+  permisos: [...PERMISOS_DEFAULT.empleada]
+}
 
 export default function Usuarios() {
   const { user, profile, teamOwner } = useAuth()
   const [members,    setMembers]    = useState([])
+  const [loading,    setLoading]    = useState(true)
   const [showModal,  setShowModal]  = useState(false)
-  const [editMember, setEditMember] = useState(null)
+  const [editModal,  setEditModal]  = useState(null)
   const [form,       setForm]       = useState(emptyForm)
   const [saving,     setSaving]     = useState(false)
   const [error,      setError]      = useState('')
-  const [inviteCode, setInviteCode] = useState('')
-  const [inviteEmail,setInviteEmail]= useState('')
-  const [copied,     setCopied]     = useState(false)
-  const [mailSent,   setMailSent]   = useState(false)
+  const [showPass,   setShowPass]   = useState(false)
+  const [success,    setSuccess]    = useState('')
 
-  // Siempre suscribirse al equipo del workspace owner
+  const adminUid = teamOwner || user?.uid
+
+  // Cargar miembros del equipo
   useEffect(() => {
-    if (!teamOwner) return
-    return subscribeToTeam(teamOwner, setMembers)
-  }, [teamOwner])
+    if (!adminUid) return
+    const r = ref(db, `teams/${adminUid}/members`)
+    const unsub = onValue(r, snap => {
+      const data = snap.val() || {}
+      setMembers(Object.values(data))
+      setLoading(false)
+    })
+    return () => off(r)
+  }, [adminUid])
 
-  function setField(k,v){ setForm(f=>({...f,[k]:v})) }
-  function handleRoleChange(role){ setForm(f=>({...f,role,permisos:[...(PERMISOS_DEFAULT[role]||[])]})) }
-  function togglePermiso(id){ setForm(f=>({...f,permisos:f.permisos.includes(id)?f.permisos.filter(p=>p!==id):[...f.permisos,id]})) }
+  function setField(k, v) { setForm(f => ({ ...f, [k]: v })) }
+  function handleRoleChange(role) {
+    setForm(f => ({ ...f, role, permisos: [...(PERMISOS_DEFAULT[role] || [])] }))
+  }
+  function togglePermiso(id) {
+    setForm(f => ({
+      ...f,
+      permisos: f.permisos.includes(id)
+        ? f.permisos.filter(p => p !== id)
+        : [...f.permisos, id]
+    }))
+  }
 
-  async function handleSave() {
-    if (!form.nombre.trim()||!form.email.trim()){ setError('Nombre y email requeridos'); return }
+  async function handleCreate() {
+    if (!form.nombre.trim()) { setError('El nombre es requerido'); return }
+    if (!form.email.trim())  { setError('El email es requerido'); return }
+    if (form.password.length < 6) { setError('La contraseña debe tener al menos 6 caracteres'); return }
+
     setSaving(true); setError('')
     try {
-      if (editMember) {
-        await updateTeamMember(teamOwner, editMember.id, { nombre:form.nombre, role:form.role, permisos:form.permisos })
-        setShowModal(false); setEditMember(null); setForm(emptyForm)
-      } else {
-        const result = await createTeamMember(teamOwner, { nombre:form.nombre, email:form.email, role:form.role, permisos:form.permisos })
-        setInviteCode(result.code); setInviteEmail(form.email)
+      // 1. Crear usuario en Firebase Auth
+      const cred = await createUserWithEmailAndPassword(auth, form.email, form.password)
+      await updateProfile(cred.user, { displayName: form.nombre })
+
+      // 2. Guardar perfil del usuario
+      const profileData = {
+        nombre:         form.nombre,
+        email:          form.email,
+        role:           form.role,
+        ownerUid:       adminUid,
+        permisos:       form.permisos,
+        hideComisiones: false,
+        createdAt:      new Date().toISOString(),
       }
-    } catch(e){ setError(e.message) }
+      await set(ref(db, `users/${cred.user.uid}/profile`), profileData)
+
+      // 3. Agregar al equipo del admin
+      const memberData = {
+        id:        cred.user.uid,
+        uid:       cred.user.uid,
+        nombre:    form.nombre,
+        email:     form.email,
+        role:      form.role,
+        permisos:  form.permisos,
+        active:    true,
+        createdAt: new Date().toISOString(),
+      }
+      await set(ref(db, `teams/${adminUid}/members/${cred.user.uid}`), memberData)
+
+      setSuccess(`✓ Usuario ${form.nombre} creado. Ya puede ingresar con ${form.email}`)
+      setForm(emptyForm)
+      setShowModal(false)
+    } catch (e) {
+      if (e.code === 'auth/email-already-in-use') {
+        // El email ya existe — solo agregar al equipo
+        setError('Ese email ya tiene cuenta. Si querés agregarlo al equipo de todas formas, contactá a soporte.')
+      } else {
+        setError(e.message)
+      }
+    }
     setSaving(false)
   }
 
-  function copyLink() {
-    const url = `${window.location.origin}/invitar/${inviteCode}`
-    navigator.clipboard.writeText(`Te invito a Lumina Events:\n${url}\nCódigo: ${inviteCode}`)
-    setCopied(true); setTimeout(()=>setCopied(false),2000)
+  async function handleEdit() {
+    if (!editModal) return
+    setSaving(true); setError('')
+    try {
+      const updates = {
+        nombre:   form.nombre,
+        role:     form.role,
+        permisos: form.permisos,
+        updatedAt: new Date().toISOString(),
+      }
+      // Actualizar en el equipo
+      await update(ref(db, `teams/${adminUid}/members/${editModal.uid}`), updates)
+      // Actualizar perfil del usuario
+      await update(ref(db, `users/${editModal.uid}/profile`), updates)
+      setEditModal(null); setForm(emptyForm)
+    } catch (e) { setError(e.message) }
+    setSaving(false)
   }
 
-  function sendEmail() {
-    const url  = `${window.location.origin}/invitar/${inviteCode}`
-    const subj = encodeURIComponent('Te invitaron a Lumina Events')
-    const body = encodeURIComponent(`Hola ${form.nombre}!\n\nAccedé acá: ${url}\n\nCódigo: ${inviteCode}`)
-    window.open(`mailto:${inviteEmail}?subject=${subj}&body=${body}`)
-    setMailSent(true)
+  async function handleDelete(member) {
+    if (!confirm(`¿Desactivar el acceso de ${member.nombre}?`)) return
+    await update(ref(db, `teams/${adminUid}/members/${member.uid}`), { active: false })
+    await update(ref(db, `users/${member.uid}/profile`), { active: false })
   }
 
-  function openEdit(m){
-    setEditMember(m); setInviteCode(''); setError('')
-    setForm({ nombre:m.nombre, email:m.email, role:m.role, permisos:m.permisos||PERMISOS_DEFAULT[m.role]||[] })
-    setShowModal(true)
+  async function handleActivate(member) {
+    await update(ref(db, `teams/${adminUid}/members/${member.uid}`), { active: true })
+    await update(ref(db, `users/${member.uid}/profile`), { active: true })
   }
 
-  function openNew(){ setEditMember(null); setForm(emptyForm); setInviteCode(''); setInviteEmail(''); setMailSent(false); setError(''); setShowModal(true) }
+  function openEdit(m) {
+    setEditModal(m)
+    setForm({ nombre: m.nombre, email: m.email, password: '', role: m.role,
+      permisos: m.permisos || PERMISOS_DEFAULT[m.role] || [] })
+    setError('')
+  }
 
   return (
     <div className="fade-in">
       <PageHeader
         title="Usuarios del equipo"
-        subtitle={`${members.length} usuario${members.length!==1?'s':''} · workspace: ${profile?.orgName||'Mi equipo'}`}
-        actions={<Button onClick={openNew}><Plus size={15}/> Agregar usuario</Button>}
+        subtitle={`${members.filter(m=>m.active!==false).length} activo${members.filter(m=>m.active!==false).length!==1?'s':''}`}
+        actions={<Button onClick={() => { setShowModal(true); setForm(emptyForm); setError('') }}>
+          <Plus size={15}/> Agregar usuario
+        </Button>}
       />
 
       <div className="p-7 space-y-5">
+        {success && (
+          <Alert variant="success">
+            {success}
+            <button onClick={() => setSuccess('')} className="ml-auto opacity-60 hover:opacity-100">✕</button>
+          </Alert>
+        )}
+
         {/* Mi cuenta */}
         <Card>
           <CardHeader><Shield size={15} className="text-warm-500"/> Tu cuenta (Admin)</CardHeader>
           <CardBody>
             <div className="flex items-center gap-4">
               <div className="w-12 h-12 rounded-full bg-gradient-to-br from-warm-300 to-warm-600 flex items-center justify-center text-white font-medium text-base">
-                {profile?.nombre?.[0]?.toUpperCase()||'A'}
+                {profile?.nombre?.[0]?.toUpperCase() || 'A'}
               </div>
               <div>
-                <p className="font-medium text-ink-800">{profile?.nombre||'Admin'}</p>
-                <p className="text-sm text-ink-400">{profile?.email||user?.email}</p>
-                <div className="flex items-center gap-2 mt-1.5">
-                  <span className="text-xs bg-warm-100 text-warm-700 px-2.5 py-0.5 rounded-full">👑 Admin</span>
-                  <span className="text-xs text-ink-400">UID: {teamOwner?.slice(0,8)}...</span>
-                </div>
+                <p className="font-medium text-ink-800">{profile?.nombre || 'Admin'}</p>
+                <p className="text-sm text-ink-400">{profile?.email || user?.email}</p>
+                <span className="inline-flex items-center gap-1 text-xs bg-warm-100 text-warm-700 px-2.5 py-0.5 rounded-full mt-1.5">
+                  👑 Admin — acceso completo
+                </span>
               </div>
             </div>
           </CardBody>
         </Card>
 
-        {/* Miembros */}
-        {members.length === 0 ? (
+        {/* Lista */}
+        {loading ? (
+          <div className="grid gap-3">
+            {[1,2].map(i => <div key={i} className="h-20 bg-white rounded-xl animate-pulse border border-nude-200"/>)}
+          </div>
+        ) : members.length === 0 ? (
           <Card>
             <div className="py-14 text-center">
               <Users size={40} className="text-nude-300 mx-auto mb-3" strokeWidth={1.5}/>
-              <p className="text-sm text-ink-400 mb-1">Sin usuarios en el equipo todavía</p>
-              <p className="text-xs text-ink-300 mb-5">Agregá socias, empleadas o proveedores</p>
-              <Button size="sm" onClick={openNew}><Plus size={13}/> Agregar primer usuario</Button>
+              <p className="text-sm text-ink-400 mb-5">Sin usuarios en el equipo todavía</p>
+              <Button size="sm" onClick={() => setShowModal(true)}><Plus size={13}/> Agregar primero</Button>
             </div>
           </Card>
         ) : (
           <div className="grid gap-3">
-            {members.map(m=>{
-              const roleCfg = ROLES[m.role]||ROLES.empleada
-              const permisos = m.permisos||PERMISOS_DEFAULT[m.role]||[]
+            {members.map(m => {
+              const roleCfg  = ROLES[m.role] || ROLES.empleada
+              const isActive = m.active !== false
               return (
-                <Card key={m.id} className={!m.active?'opacity-60':''}>
+                <Card key={m.uid || m.id} className={!isActive ? 'opacity-50' : ''}>
                   <CardBody>
                     <div className="flex items-center gap-4">
-                      <div className="w-10 h-10 rounded-full bg-nude-100 flex items-center justify-center text-ink-500 text-sm font-medium flex-shrink-0">
-                        {m.nombre?.[0]?.toUpperCase()||'?'}
+                      <div className="w-10 h-10 rounded-full bg-nude-100 flex items-center justify-center text-ink-600 text-sm font-medium flex-shrink-0">
+                        {m.nombre?.[0]?.toUpperCase() || '?'}
                       </div>
                       <div className="flex-1 min-w-0">
                         <div className="flex items-center gap-2 flex-wrap">
                           <p className="font-medium text-ink-800">{m.nombre}</p>
-                          <span className={`text-xs px-2.5 py-0.5 rounded-full font-medium ${roleCfg.color}`}>{roleCfg.icon} {roleCfg.label}</span>
-                          {!m.active&&<Badge variant="gray">Inactivo</Badge>}
-                          {!m.uid&&<Badge variant="amber">Invitación pendiente</Badge>}
+                          <span className={`text-xs px-2.5 py-0.5 rounded-full font-medium ${roleCfg.color}`}>
+                            {roleCfg.icon} {roleCfg.label}
+                          </span>
+                          {!isActive && <Badge variant="gray">Inactivo</Badge>}
                         </div>
                         <p className="text-xs text-ink-400 mt-0.5">{m.email}</p>
-                        <p className="text-xs text-ink-300 mt-0.5">{permisos.length} permisos asignados</p>
+                        <p className="text-xs text-ink-300 mt-0.5">
+                          {(m.permisos || PERMISOS_DEFAULT[m.role] || []).length} permisos
+                        </p>
                       </div>
                       <div className="flex gap-1.5 flex-shrink-0">
-                        <Button variant="ghost" size="xs" onClick={()=>updateTeamMember(teamOwner,m.id,{active:!m.active})}>{m.active?'⏸':'▶️'}</Button>
-                        <Button variant="ghost" size="xs" onClick={()=>openEdit(m)}><Edit2 size={13}/></Button>
-                        <Button variant="ghost" size="xs" className="hover:text-red-500"
-                          onClick={()=>{ if(confirm(`¿Eliminar a ${m.nombre}?`)) deleteTeamMember(teamOwner,m.id) }}>
-                          <Trash2 size={13}/>
-                        </Button>
+                        {isActive
+                          ? <Button variant="ghost" size="xs" onClick={() => handleDelete(m)} title="Desactivar">⏸</Button>
+                          : <Button variant="ghost" size="xs" onClick={() => handleActivate(m)} title="Activar">▶️</Button>
+                        }
+                        <Button variant="ghost" size="xs" onClick={() => openEdit(m)}><Edit2 size={13}/></Button>
                       </div>
                     </div>
                   </CardBody>
@@ -161,87 +245,150 @@ export default function Usuarios() {
         )}
       </div>
 
-      <Modal open={showModal} onClose={()=>{setShowModal(false);setEditMember(null);setInviteCode('')}}
-        title={editMember?'Editar usuario':'Agregar usuario'} size="lg">
+      {/* Modal CREAR usuario */}
+      <Modal open={showModal} onClose={() => { setShowModal(false); setError('') }}
+        title="Crear usuario del equipo" size="lg">
         <div className="space-y-5">
-          {error&&<Alert variant="danger">{error}</Alert>}
-          {inviteCode ? (
-            <div className="space-y-4">
-              <div className="p-5 bg-sage-50 border border-sage-200 rounded-xl text-center">
-                <div className="w-12 h-12 bg-sage-100 rounded-full flex items-center justify-center mx-auto mb-3">
-                  <Check size={24} className="text-sage-600"/>
-                </div>
-                <p className="font-medium text-sage-700">¡Usuario creado!</p>
-                <p className="text-sm text-ink-500 mt-1">Enviá el acceso a <strong>{inviteEmail}</strong></p>
-              </div>
-              <div className="p-4 bg-nude-50 border border-nude-200 rounded-xl text-center">
-                <p className="text-xs text-ink-400 mb-2 uppercase tracking-wide font-medium">Código de invitación</p>
-                <code className="text-2xl font-mono font-bold text-ink-800 tracking-[0.3em] block bg-white py-3 rounded-lg border border-nude-200">{inviteCode}</code>
-                <p className="text-xs text-ink-400 mt-2 break-all">{window.location.origin}/invitar/{inviteCode}</p>
-              </div>
-              <div className="grid grid-cols-2 gap-3">
-                <button onClick={sendEmail}
-                  className={`flex items-center justify-center gap-2 py-3 rounded-xl border text-sm font-medium transition-all
-                    ${mailSent?'bg-sage-50 border-sage-200 text-sage-700':'bg-warm-50 border-warm-200 text-warm-700 hover:bg-warm-100'}`}>
-                  {mailSent?<><Check size={14}/>Mail abierto</>:<><Mail size={14}/>Enviar por email</>}
+          {error && <Alert variant="danger">{error}</Alert>}
+
+          <div className="p-3 bg-warm-50 border border-warm-100 rounded-xl text-xs text-warm-700">
+            El usuario se crea directo con email y contraseña. Ya puede ingresar sin pasos extras.
+          </div>
+
+          <div className="grid grid-cols-2 gap-4">
+            <Input label="Nombre *" value={form.nombre} onChange={e => setField('nombre', e.target.value)} placeholder="Ej: Valentina"/>
+            <Input label="Email *" type="email" value={form.email} onChange={e => setField('email', e.target.value)} placeholder="val@email.com"/>
+          </div>
+
+          <div className="relative">
+            <Input
+              label="Contraseña *"
+              type={showPass ? 'text' : 'password'}
+              value={form.password}
+              onChange={e => setField('password', e.target.value)}
+              placeholder="Mínimo 6 caracteres"
+            />
+            <button onClick={() => setShowPass(s => !s)}
+              className="absolute right-3 top-7 text-ink-400 hover:text-ink-600">
+              {showPass ? <EyeOff size={15}/> : <Eye size={15}/>}
+            </button>
+            <p className="text-xs text-ink-400 mt-1">
+              Pasale la contraseña por WhatsApp. Puede cambiarla después desde su perfil.
+            </p>
+          </div>
+
+          {/* Rol */}
+          <div>
+            <label className="block text-xs font-medium text-ink-500 mb-2">Rol</label>
+            <div className="grid grid-cols-5 gap-2">
+              {Object.entries(ROLES).map(([key, cfg]) => (
+                <button key={key} onClick={() => handleRoleChange(key)}
+                  className={`p-2.5 rounded-xl border text-center transition-all
+                    ${form.role === key ? 'border-warm-400 bg-warm-50 ring-1 ring-warm-300' : 'border-nude-200 hover:border-warm-200'}`}>
+                  <div className="text-lg mb-1">{cfg.icon}</div>
+                  <div className="text-[10px] font-medium text-ink-600">{cfg.label}</div>
                 </button>
-                <button onClick={copyLink}
-                  className="flex items-center justify-center gap-2 py-3 rounded-xl border border-nude-300 text-sm font-medium text-ink-600 hover:bg-nude-100 transition-all">
-                  {copied?<><Check size={14} className="text-sage-600"/>Copiado</>:<><Copy size={14}/>Copiar link</>}
-                </button>
-              </div>
-              <Button className="w-full justify-center" onClick={()=>{setShowModal(false);setInviteCode('')}}>Listo</Button>
+              ))}
             </div>
-          ) : (
-            <>
-              <div className="grid grid-cols-2 gap-4">
-                <Input label="Nombre *" value={form.nombre} onChange={e=>setField('nombre',e.target.value)} placeholder="Ej: Valentina"/>
-                {!editMember&&<Input label="Email *" type="email" value={form.email} onChange={e=>setField('email',e.target.value)} placeholder="val@email.com"/>}
-              </div>
-              <div>
-                <label className="block text-xs font-medium text-ink-500 mb-2">Rol base</label>
-                <div className="grid grid-cols-5 gap-2">
-                  {Object.entries(ROLES).map(([key,cfg])=>(
-                    <button key={key} onClick={()=>handleRoleChange(key)}
-                      className={`p-2.5 rounded-xl border text-center transition-all
-                        ${form.role===key?'border-warm-400 bg-warm-50 ring-1 ring-warm-300':'border-nude-200 hover:border-warm-200'}`}>
-                      <div className="text-xl mb-1">{cfg.icon}</div>
-                      <div className="text-[10px] font-medium text-ink-600">{cfg.label}</div>
-                    </button>
-                  ))}
-                </div>
-              </div>
-              <div>
-                <div className="flex items-center justify-between mb-3">
-                  <label className="text-xs font-medium text-ink-500">Permisos personalizados</label>
-                  <button onClick={()=>setForm(f=>({...f,permisos:[...(PERMISOS_DEFAULT[f.role]||[])]}))}
-                    className="text-xs text-warm-600 hover:underline flex items-center gap-1"><RefreshCw size={10}/> Restablecer</button>
-                </div>
-                <div className="border border-nude-200 rounded-xl overflow-hidden divide-y divide-nude-100 max-h-56 overflow-y-auto">
-                  {GRUPOS.map(grupo=>{
-                    const gP=Object.entries(PERMISOS).filter(([,p])=>p.grupo===grupo)
-                    return (
-                      <div key={grupo} className="px-4 py-3 bg-white">
-                        <p className="text-[10px] font-semibold text-ink-400 uppercase tracking-wide mb-2">{grupo}</p>
-                        <div className="grid grid-cols-2 gap-x-6 gap-y-1.5">
-                          {gP.map(([id,p])=>(
-                            <PermisoCheck key={id} id={id} label={p.label}
-                              checked={form.permisos.includes(id)} onChange={()=>togglePermiso(id)}/>
-                          ))}
-                        </div>
-                      </div>
-                    )
-                  })}
-                </div>
-              </div>
-              <div className="flex gap-3 justify-end pt-2">
-                <Button variant="outline" onClick={()=>{setShowModal(false);setEditMember(null)}}>Cancelar</Button>
-                <Button onClick={handleSave} loading={saving}>
-                  {editMember?'Guardar cambios':<><Mail size={13}/>Crear y generar invitación</>}
-                </Button>
-              </div>
-            </>
-          )}
+            <p className="text-xs text-ink-400 mt-2">
+              {form.role === 'mensajera' && '💬 Solo ve invitados y puede enviar mensajes WA'}
+              {form.role === 'empleada'  && '👩‍💼 Eventos e invitados, sin ver finanzas'}
+              {form.role === 'socia'     && '🤝 Acceso casi completo'}
+              {form.role === 'proveedor' && '🏢 Solo ve presupuestos'}
+              {form.role === 'admin'     && '👑 Acceso total'}
+            </p>
+          </div>
+
+          {/* Permisos */}
+          <div>
+            <div className="flex items-center justify-between mb-2">
+              <label className="text-xs font-medium text-ink-500">Permisos</label>
+              <button onClick={() => setForm(f => ({ ...f, permisos: [...(PERMISOS_DEFAULT[f.role] || [])] }))}
+                className="text-xs text-warm-600 hover:underline flex items-center gap-1">
+                <RefreshCw size={10}/> Restablecer
+              </button>
+            </div>
+            <div className="border border-nude-200 rounded-xl divide-y divide-nude-100 max-h-52 overflow-y-auto">
+              {GRUPOS.map(grupo => {
+                const gP = Object.entries(PERMISOS).filter(([,p]) => p.grupo === grupo)
+                return (
+                  <div key={grupo} className="px-4 py-3 bg-white">
+                    <p className="text-[10px] font-semibold text-ink-400 uppercase tracking-wide mb-2">{grupo}</p>
+                    <div className="grid grid-cols-2 gap-x-6 gap-y-1.5">
+                      {gP.map(([id, p]) => (
+                        <PermisoCheck key={id} id={id} label={p.label}
+                          checked={form.permisos.includes(id)}
+                          onChange={() => togglePermiso(id)}/>
+                      ))}
+                    </div>
+                  </div>
+                )
+              })}
+            </div>
+          </div>
+
+          <div className="flex gap-3 justify-end pt-2">
+            <Button variant="outline" onClick={() => setShowModal(false)}>Cancelar</Button>
+            <Button onClick={handleCreate} loading={saving}>
+              <Plus size={13}/> Crear usuario
+            </Button>
+          </div>
+        </div>
+      </Modal>
+
+      {/* Modal EDITAR usuario */}
+      <Modal open={!!editModal} onClose={() => { setEditModal(null); setError('') }}
+        title="Editar usuario" size="lg">
+        <div className="space-y-5">
+          {error && <Alert variant="danger">{error}</Alert>}
+
+          <Input label="Nombre" value={form.nombre} onChange={e => setField('nombre', e.target.value)}/>
+
+          <div>
+            <label className="block text-xs font-medium text-ink-500 mb-2">Rol</label>
+            <div className="grid grid-cols-5 gap-2">
+              {Object.entries(ROLES).map(([key, cfg]) => (
+                <button key={key} onClick={() => handleRoleChange(key)}
+                  className={`p-2.5 rounded-xl border text-center transition-all
+                    ${form.role === key ? 'border-warm-400 bg-warm-50 ring-1 ring-warm-300' : 'border-nude-200 hover:border-warm-200'}`}>
+                  <div className="text-lg mb-1">{cfg.icon}</div>
+                  <div className="text-[10px] font-medium text-ink-600">{cfg.label}</div>
+                </button>
+              ))}
+            </div>
+          </div>
+
+          <div>
+            <div className="flex items-center justify-between mb-2">
+              <label className="text-xs font-medium text-ink-500">Permisos</label>
+              <button onClick={() => setForm(f => ({ ...f, permisos: [...(PERMISOS_DEFAULT[f.role] || [])] }))}
+                className="text-xs text-warm-600 hover:underline flex items-center gap-1">
+                <RefreshCw size={10}/> Restablecer
+              </button>
+            </div>
+            <div className="border border-nude-200 rounded-xl divide-y divide-nude-100 max-h-52 overflow-y-auto">
+              {GRUPOS.map(grupo => {
+                const gP = Object.entries(PERMISOS).filter(([,p]) => p.grupo === grupo)
+                return (
+                  <div key={grupo} className="px-4 py-3 bg-white">
+                    <p className="text-[10px] font-semibold text-ink-400 uppercase tracking-wide mb-2">{grupo}</p>
+                    <div className="grid grid-cols-2 gap-x-6 gap-y-1.5">
+                      {gP.map(([id, p]) => (
+                        <PermisoCheck key={id} id={id} label={p.label}
+                          checked={form.permisos.includes(id)}
+                          onChange={() => togglePermiso(id)}/>
+                      ))}
+                    </div>
+                  </div>
+                )
+              })}
+            </div>
+          </div>
+
+          <div className="flex gap-3 justify-end">
+            <Button variant="outline" onClick={() => setEditModal(null)}>Cancelar</Button>
+            <Button onClick={handleEdit} loading={saving}>Guardar cambios</Button>
+          </div>
         </div>
       </Modal>
     </div>
