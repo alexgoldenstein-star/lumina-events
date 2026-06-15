@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
 import { Plus, Trash2, Edit2, Copy, Check, Users, Shield,
-  Mail, RefreshCw, Send, X } from 'lucide-react'
+  Mail, RefreshCw, X } from 'lucide-react'
 import { useAuth } from '../lib/AuthContext'
 import { subscribeToTeam, createTeamMember, updateTeamMember, deleteTeamMember } from '../lib/db'
 import { ROLES, PERMISOS, PERMISOS_DEFAULT } from '../lib/roles'
@@ -26,33 +26,34 @@ function PermisoCheckbox({ id, checked, label, onChange }) {
   )
 }
 
-const emptyForm = { nombre: '', email: '', role: 'empleada', permisos: [...PERMISOS_DEFAULT.empleada] }
+const emptyForm = { nombre:'', email:'', role:'empleada', permisos:[...PERMISOS_DEFAULT.empleada] }
 
 export default function Usuarios() {
-  const { user, profile, ownerUid } = useAuth()
-  const [members,    setMembers]    = useState([])
-  const [showModal,  setShowModal]  = useState(false)
-  const [editMember, setEditMember] = useState(null)
-  const [form,       setForm]       = useState(emptyForm)
-  const [saving,     setSaving]     = useState(false)
-  const [error,      setError]      = useState('')
-  const [inviteCode, setInviteCode] = useState('')
-  const [inviteEmail,setInviteEmail]= useState('')
-  const [copied,     setCopied]     = useState(false)
-  const [sendingMail,setSendingMail]= useState(false)
-  const [mailSent,   setMailSent]   = useState(false)
+  const { user, profile } = useAuth()
+  const [members,     setMembers]    = useState([])
+  const [showModal,   setShowModal]  = useState(false)
+  const [editMember,  setEditMember] = useState(null)
+  const [form,        setForm]       = useState(emptyForm)
+  const [saving,      setSaving]     = useState(false)
+  const [error,       setError]      = useState('')
+  const [inviteCode,  setInviteCode] = useState('')
+  const [inviteEmail, setInviteEmail]= useState('')
+  const [copied,      setCopied]     = useState(false)
+  const [mailSent,    setMailSent]   = useState(false)
 
-  const adminUid = ownerUid || user?.uid
+  // El admin siempre usa su propio UID como "dueño" del equipo
+  // Si es un usuario secundario, usa el ownerUid del profile
+  const adminUid = profile?.role === 'admin' ? user?.uid : (profile?.ownerUid || user?.uid)
 
   useEffect(() => {
     if (!adminUid) return
     return subscribeToTeam(adminUid, setMembers)
   }, [adminUid])
 
-  function setField(k, v) { setForm(f => ({ ...f, [k]: v })) }
+  function setField(k,v){ setForm(f=>({...f,[k]:v})) }
 
   function handleRoleChange(role) {
-    setForm(f => ({ ...f, role, permisos: [...(PERMISOS_DEFAULT[role] || [])] }))
+    setForm(f => ({ ...f, role, permisos:[...(PERMISOS_DEFAULT[role]||[])] }))
   }
 
   function togglePermiso(id) {
@@ -65,10 +66,7 @@ export default function Usuarios() {
   }
 
   async function handleSave() {
-    if (!form.nombre.trim() || !form.email.trim()) {
-      setError('Nombre y email son requeridos')
-      return
-    }
+    if (!form.nombre.trim() || !form.email.trim()) { setError('Nombre y email son requeridos'); return }
     setSaving(true); setError('')
     try {
       if (editMember) {
@@ -84,37 +82,30 @@ export default function Usuarios() {
         setInviteCode(result.code)
         setInviteEmail(form.email)
       }
-    } catch (e) { setError(e.message) }
+    } catch(e) { setError(e.message) }
     setSaving(false)
   }
 
   function copyInviteLink() {
-    const url = `${window.location.origin}/invitar/${inviteCode}`
+    const url  = `${window.location.origin}/invitar/${inviteCode}`
     const text = `Hola! Te invito a usar Lumina Events.\n\nAccedé desde acá: ${url}\n\nCódigo: ${inviteCode}`
     navigator.clipboard.writeText(text)
-    setCopied(true); setTimeout(() => setCopied(false), 2000)
+    setCopied(true); setTimeout(()=>setCopied(false), 2000)
   }
 
-  // Simula envío por email abriendo el cliente de mail del usuario
-  function sendInviteByEmail() {
-    setSendingMail(true)
-    const url   = `${window.location.origin}/invitar/${inviteCode}`
-    const subj  = encodeURIComponent('Te invitaron a Lumina Events')
-    const body  = encodeURIComponent(
-      `Hola ${form.nombre}!\n\nTe invito a acceder a Lumina Events, la plataforma de gestión de eventos.\n\nHacé clic acá para crear tu acceso:\n${url}\n\nCódigo de invitación: ${inviteCode}\n\nSaludos!`
-    )
+  function sendByEmail() {
+    const url  = `${window.location.origin}/invitar/${inviteCode}`
+    const subj = encodeURIComponent('Te invitaron a Lumina Events')
+    const body = encodeURIComponent(`Hola ${form.nombre}!\n\nTe invito a acceder a Lumina Events.\n\nHacé clic acá: ${url}\n\nCódigo: ${inviteCode}`)
     window.open(`mailto:${inviteEmail}?subject=${subj}&body=${body}`)
-    setTimeout(() => { setSendingMail(false); setMailSent(true) }, 800)
+    setMailSent(true)
   }
 
   function openEdit(member) {
     setEditMember(member)
-    setForm({
-      nombre: member.nombre, email: member.email, role: member.role,
-      permisos: member.permisos || PERMISOS_DEFAULT[member.role] || []
-    })
-    setInviteCode(''); setError('')
-    setShowModal(true)
+    setForm({ nombre:member.nombre, email:member.email, role:member.role,
+      permisos: member.permisos || PERMISOS_DEFAULT[member.role] || [] })
+    setInviteCode(''); setError(''); setShowModal(true)
   }
 
   function openNew() {
@@ -136,13 +127,12 @@ export default function Usuarios() {
     <div className="fade-in">
       <PageHeader
         title="Usuarios del equipo"
-        subtitle="Administrá quién puede acceder y qué puede ver"
+        subtitle={`${members.length} usuario${members.length !== 1 ? 's' : ''} en el equipo`}
         actions={<Button onClick={openNew}><Plus size={15}/> Agregar usuario</Button>}
       />
 
       <div className="p-7 space-y-5">
-
-        {/* Mi perfil admin */}
+        {/* Mi perfil */}
         <Card>
           <CardHeader><Shield size={15} className="text-warm-500"/> Tu cuenta</CardHeader>
           <CardBody>
@@ -161,7 +151,7 @@ export default function Usuarios() {
           </CardBody>
         </Card>
 
-        {/* Lista miembros */}
+        {/* Lista */}
         {members.length === 0 ? (
           <Card>
             <div className="py-14 text-center">
@@ -190,16 +180,19 @@ export default function Usuarios() {
                             {roleCfg.icon} {roleCfg.label}
                           </span>
                           {!member.active && <Badge variant="gray">Inactivo</Badge>}
+                          {!member.uid && <Badge variant="amber">Invitación pendiente</Badge>}
                         </div>
                         <p className="text-xs text-ink-400 mt-0.5">{member.email}</p>
-                        <p className="text-xs text-ink-300 mt-0.5">{permisos.length} permiso{permisos.length !== 1 ? 's' : ''}</p>
+                        <p className="text-xs text-ink-300 mt-0.5">{permisos.length} permiso{permisos.length !== 1 ? 's' : ''} asignados</p>
                       </div>
                       <div className="flex gap-1.5 flex-shrink-0">
-                        <Button variant="ghost" size="xs" onClick={() => toggleActive(member)} title={member.active ? 'Desactivar' : 'Activar'}>
+                        <Button variant="ghost" size="xs" onClick={()=>toggleActive(member)} title={member.active?'Desactivar':'Activar'}>
                           {member.active ? '⏸' : '▶️'}
                         </Button>
-                        <Button variant="ghost" size="xs" onClick={() => openEdit(member)}><Edit2 size={13}/></Button>
-                        <Button variant="ghost" size="xs" className="hover:text-red-500" onClick={() => handleDelete(member)}><Trash2 size={13}/></Button>
+                        <Button variant="ghost" size="xs" onClick={()=>openEdit(member)}><Edit2 size={13}/></Button>
+                        <Button variant="ghost" size="xs" className="hover:text-red-500" onClick={()=>handleDelete(member)}>
+                          <Trash2 size={13}/>
+                        </Button>
                       </div>
                     </div>
                   </CardBody>
@@ -211,17 +204,13 @@ export default function Usuarios() {
       </div>
 
       {/* Modal */}
-      <Modal
-        open={showModal}
-        onClose={() => { setShowModal(false); setEditMember(null); setInviteCode('') }}
-        title={editMember ? 'Editar usuario' : 'Agregar usuario'}
-        size="lg"
-      >
+      <Modal open={showModal} onClose={()=>{ setShowModal(false); setEditMember(null); setInviteCode('') }}
+        title={editMember ? 'Editar usuario' : 'Agregar usuario'} size="lg">
         <div className="space-y-5">
           {error && <Alert variant="danger">{error}</Alert>}
 
-          {/* ── Paso 2: código generado ─── */}
           {inviteCode ? (
+            // Paso 2: código generado
             <div className="space-y-4">
               <div className="p-5 bg-sage-50 border border-sage-200 rounded-xl text-center">
                 <div className="w-12 h-12 bg-sage-100 rounded-full flex items-center justify-center mx-auto mb-3">
@@ -230,128 +219,78 @@ export default function Usuarios() {
                 <p className="text-base font-medium text-sage-700">¡Usuario creado!</p>
                 <p className="text-sm text-ink-500 mt-1">Enviá el acceso a <strong>{inviteEmail}</strong></p>
               </div>
-
-              {/* Código */}
               <div className="p-4 bg-nude-50 border border-nude-200 rounded-xl">
                 <p className="text-xs text-ink-400 mb-2 font-medium uppercase tracking-wide">Código de invitación</p>
-                <div className="flex items-center gap-3">
-                  <code className="text-2xl font-mono font-bold text-ink-800 tracking-[0.3em] flex-1 text-center bg-white py-3 rounded-lg border border-nude-200">
-                    {inviteCode}
-                  </code>
-                </div>
-                <p className="text-xs text-ink-400 mt-2 text-center">
-                  Link: <span className="text-warm-600 break-all">{window.location.origin}/invitar/{inviteCode}</span>
+                <code className="block text-center text-2xl font-mono font-bold text-ink-800 tracking-[0.3em] bg-white py-3 rounded-lg border border-nude-200">
+                  {inviteCode}
+                </code>
+                <p className="text-xs text-ink-400 mt-2 text-center break-all">
+                  {window.location.origin}/invitar/{inviteCode}
                 </p>
               </div>
-
-              {/* Opciones de envío */}
               <div className="grid grid-cols-2 gap-3">
-                <button
-                  onClick={sendInviteByEmail}
-                  disabled={sendingMail}
+                <button onClick={sendByEmail}
                   className={`flex items-center justify-center gap-2 py-3 rounded-xl border text-sm font-medium transition-all
-                    ${mailSent
-                      ? 'bg-sage-50 border-sage-200 text-sage-700'
-                      : 'bg-warm-50 border-warm-200 text-warm-700 hover:bg-warm-100'
-                    }`}
-                >
-                  {mailSent
-                    ? <><Check size={15}/> Mail abierto</>
-                    : sendingMail
-                      ? <><div className="w-4 h-4 border-2 border-warm-400 border-t-transparent rounded-full animate-spin"/> Abriendo...</>
-                      : <><Mail size={15}/> Enviar por email</>
-                  }
+                    ${mailSent?'bg-sage-50 border-sage-200 text-sage-700':'bg-warm-50 border-warm-200 text-warm-700 hover:bg-warm-100'}`}>
+                  {mailSent ? <><Check size={14}/> Mail abierto</> : <><Mail size={14}/> Enviar por email</>}
                 </button>
-                <button
-                  onClick={copyInviteLink}
-                  className="flex items-center justify-center gap-2 py-3 rounded-xl border border-nude-300 text-sm font-medium text-ink-600 hover:bg-nude-100 transition-all"
-                >
-                  {copied ? <><Check size={15} className="text-sage-600"/> Copiado</> : <><Copy size={15}/> Copiar link</>}
+                <button onClick={copyInviteLink}
+                  className="flex items-center justify-center gap-2 py-3 rounded-xl border border-nude-300 text-sm font-medium text-ink-600 hover:bg-nude-100 transition-all">
+                  {copied ? <><Check size={14} className="text-sage-600"/> Copiado</> : <><Copy size={14}/> Copiar link</>}
                 </button>
               </div>
-
-              <p className="text-xs text-ink-400 text-center bg-nude-50 rounded-lg py-2 px-3">
-                El usuario recibirá el link, creará su contraseña y accederá con los permisos configurados.
-              </p>
-
-              <Button className="w-full justify-center" onClick={() => { setShowModal(false); setInviteCode('') }}>
+              <Button className="w-full justify-center" onClick={()=>{ setShowModal(false); setInviteCode('') }}>
                 Listo
               </Button>
             </div>
-
           ) : (
-            /* ── Paso 1: formulario ─── */
+            // Paso 1: formulario
             <>
               <div className="grid grid-cols-2 gap-4">
-                <Input
-                  label="Nombre *"
-                  value={form.nombre}
-                  onChange={e => setField('nombre', e.target.value)}
-                  placeholder="Ej: Valentina García"
-                />
-                {!editMember && (
-                  <Input
-                    label="Email *"
-                    type="email"
-                    value={form.email}
-                    onChange={e => setField('email', e.target.value)}
-                    placeholder="valeria@email.com"
-                  />
-                )}
+                <Input label="Nombre *" value={form.nombre} onChange={e=>setField('nombre',e.target.value)} placeholder="Ej: Valentina"/>
+                {!editMember && <Input label="Email *" type="email" value={form.email} onChange={e=>setField('email',e.target.value)} placeholder="val@email.com"/>}
               </div>
 
-              {/* Selector de rol */}
               <div>
                 <label className="block text-xs font-medium text-ink-500 mb-2">Rol base</label>
                 <div className="grid grid-cols-5 gap-2">
-                  {Object.entries(ROLES).map(([key, cfg]) => (
-                    <button
-                      key={key}
-                      onClick={() => handleRoleChange(key)}
-                      className={`p-2.5 rounded-xl border text-center transition-all ${
-                        form.role === key
-                          ? 'border-warm-400 bg-warm-50 ring-1 ring-warm-300'
-                          : 'border-nude-200 hover:border-warm-200 hover:bg-warm-50'
-                      }`}
-                    >
+                  {Object.entries(ROLES).map(([key,cfg])=>(
+                    <button key={key} onClick={()=>handleRoleChange(key)}
+                      className={`p-2.5 rounded-xl border text-center transition-all
+                        ${form.role===key?'border-warm-400 bg-warm-50 ring-1 ring-warm-300':'border-nude-200 hover:border-warm-200 hover:bg-warm-50'}`}>
                       <div className="text-xl mb-1">{cfg.icon}</div>
                       <div className="text-[10px] font-medium text-ink-600 leading-tight">{cfg.label}</div>
                     </button>
                   ))}
                 </div>
                 <p className="text-xs text-ink-400 mt-2">
-                  {form.role === 'mensajera' && '💬 Solo puede ver invitados y enviar mensajes WA'}
-                  {form.role === 'empleada'  && '👩‍💼 Acceso a eventos e invitados, sin finanzas'}
-                  {form.role === 'socia'     && '🤝 Acceso casi completo, sin gestión de usuarios'}
-                  {form.role === 'proveedor' && '🏢 Solo ve presupuestos de sus eventos asignados'}
-                  {form.role === 'admin'     && '👑 Acceso completo a toda la plataforma'}
+                  {form.role==='mensajera' && '💬 Solo puede ver invitados y enviar mensajes WA'}
+                  {form.role==='empleada'  && '👩‍💼 Acceso a eventos e invitados, sin finanzas'}
+                  {form.role==='socia'     && '🤝 Acceso casi completo, sin gestión de usuarios'}
+                  {form.role==='proveedor' && '🏢 Solo ve presupuestos de sus eventos asignados'}
+                  {form.role==='admin'     && '👑 Acceso completo a toda la plataforma'}
                 </p>
               </div>
 
-              {/* Permisos */}
               <div>
                 <div className="flex items-center justify-between mb-3">
                   <label className="text-xs font-medium text-ink-500">Permisos personalizados</label>
-                  <button
-                    onClick={() => setForm(f => ({ ...f, permisos: [...(PERMISOS_DEFAULT[f.role] || [])] }))}
-                    className="text-xs text-warm-600 hover:underline flex items-center gap-1"
-                  >
+                  <button onClick={()=>setForm(f=>({...f,permisos:[...(PERMISOS_DEFAULT[f.role]||[])]}))}
+                    className="text-xs text-warm-600 hover:underline flex items-center gap-1">
                     <RefreshCw size={10}/> Restablecer
                   </button>
                 </div>
-                <div className="border border-nude-200 rounded-xl overflow-hidden divide-y divide-nude-100 max-h-64 overflow-y-auto">
-                  {GRUPOS.map(grupo => {
-                    const gPermisos = Object.entries(PERMISOS).filter(([,p]) => p.grupo === grupo)
+                <div className="border border-nude-200 rounded-xl overflow-hidden divide-y divide-nude-100 max-h-56 overflow-y-auto">
+                  {GRUPOS.map(grupo=>{
+                    const gPermisos=Object.entries(PERMISOS).filter(([,p])=>p.grupo===grupo)
                     return (
                       <div key={grupo} className="px-4 py-3 bg-white">
                         <p className="text-[10px] font-semibold text-ink-400 uppercase tracking-wide mb-2">{grupo}</p>
                         <div className="grid grid-cols-2 gap-x-6 gap-y-1.5">
-                          {gPermisos.map(([id, p]) => (
-                            <PermisoCheckbox
-                              key={id} id={id} label={p.label}
+                          {gPermisos.map(([id,p])=>(
+                            <PermisoCheckbox key={id} id={id} label={p.label}
                               checked={form.permisos.includes(id)}
-                              onChange={() => togglePermiso(id)}
-                            />
+                              onChange={()=>togglePermiso(id)}/>
                           ))}
                         </div>
                       </div>
@@ -361,9 +300,7 @@ export default function Usuarios() {
               </div>
 
               <div className="flex gap-3 justify-end pt-2">
-                <Button variant="outline" onClick={() => { setShowModal(false); setEditMember(null) }}>
-                  Cancelar
-                </Button>
+                <Button variant="outline" onClick={()=>{ setShowModal(false); setEditMember(null) }}>Cancelar</Button>
                 <Button onClick={handleSave} loading={saving}>
                   {editMember ? 'Guardar cambios' : <><Mail size={13}/> Crear y generar invitación</>}
                 </Button>

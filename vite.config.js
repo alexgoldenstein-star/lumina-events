@@ -7,95 +7,60 @@ export default defineConfig({
     react(),
     VitePWA({
       registerType: 'autoUpdate',
-      includeAssets: ['favicon.svg', 'favicon.ico', 'apple-touch-icon.png'],
+      devOptions: { enabled: false },
+      includeAssets: ['favicon.svg'],
       manifest: {
         name: 'Lumina Events',
         short_name: 'Lumina',
-        description: 'Plataforma de gestión de eventos para organizadoras',
+        description: 'Gestión de eventos profesional',
         theme_color: '#B87E56',
         background_color: '#FDFAF7',
         display: 'standalone',
-        orientation: 'portrait',
+        orientation: 'any',
         scope: '/',
         start_url: '/dashboard',
+        lang: 'es',
+        categories: ['business', 'productivity'],
         icons: [
-          {
-            src: 'icons/icon-72.png',
-            sizes: '72x72',
-            type: 'image/png'
-          },
-          {
-            src: 'icons/icon-96.png',
-            sizes: '96x96',
-            type: 'image/png'
-          },
-          {
-            src: 'icons/icon-128.png',
-            sizes: '128x128',
-            type: 'image/png'
-          },
-          {
-            src: 'icons/icon-144.png',
-            sizes: '144x144',
-            type: 'image/png'
-          },
-          {
-            src: 'icons/icon-152.png',
-            sizes: '152x152',
-            type: 'image/png'
-          },
-          {
-            src: 'icons/icon-192.png',
-            sizes: '192x192',
-            type: 'image/png',
-            purpose: 'any maskable'
-          },
-          {
-            src: 'icons/icon-384.png',
-            sizes: '384x384',
-            type: 'image/png'
-          },
-          {
-            src: 'icons/icon-512.png',
-            sizes: '512x512',
-            type: 'image/png',
-            purpose: 'any maskable'
-          }
+          { src: '/icons/icon-192.png', sizes: '192x192', type: 'image/png', purpose: 'any' },
+          { src: '/icons/icon-512.png', sizes: '512x512', type: 'image/png', purpose: 'any' },
+          { src: '/icons/icon-192.png', sizes: '192x192', type: 'image/png', purpose: 'maskable' },
+          { src: '/icons/icon-512.png', sizes: '512x512', type: 'image/png', purpose: 'maskable' },
         ],
         shortcuts: [
-          {
-            name: 'Nuevo Evento',
-            url: '/eventos/nuevo',
-            description: 'Crear un nuevo evento'
-          },
-          {
-            name: 'Mensajes WA',
-            url: '/mensajes',
-            description: 'Ver pendientes de WhatsApp'
-          }
-        ]
+          { name: 'Nuevo Evento', url: '/eventos/nuevo', description: 'Crear evento' },
+          { name: 'Mensajes WA',  url: '/mensajes',      description: 'WhatsApp pendientes' },
+        ],
       },
       workbox: {
-        globPatterns: ['**/*.{js,css,html,ico,png,svg,woff2}'],
+        globPatterns: ['**/*.{js,css,html,svg,png,woff2}'],
+        navigateFallback: '/index.html',
+        navigateFallbackDenylist: [/^\/api/, /^\/cliente/, /^\/setup/],
         runtimeCaching: [
           {
-            urlPattern: /^https:\/\/fonts\.googleapis\.com\/.*/i,
+            urlPattern: /^https:\/\/fonts\.(googleapis|gstatic)\.com\/.*/i,
             handler: 'CacheFirst',
-            options: { cacheName: 'google-fonts-cache', expiration: { maxEntries: 10, maxAgeSeconds: 60*60*24*365 } }
-          },
-          {
-            urlPattern: /^https:\/\/fonts\.gstatic\.com\/.*/i,
-            handler: 'CacheFirst',
-            options: { cacheName: 'gstatic-fonts-cache', expiration: { maxEntries: 10, maxAgeSeconds: 60*60*24*365 } }
+            options: {
+              cacheName: 'fonts-cache',
+              expiration: { maxEntries: 20, maxAgeSeconds: 365 * 24 * 60 * 60 },
+            },
           },
           {
             urlPattern: /^https:\/\/images\.unsplash\.com\/.*/i,
             handler: 'CacheFirst',
-            options: { cacheName: 'unsplash-cache', expiration: { maxEntries: 30, maxAgeSeconds: 60*60*24*7 } }
-          }
-        ]
-      }
-    })
+            options: {
+              cacheName: 'images-cache',
+              expiration: { maxEntries: 50, maxAgeSeconds: 7 * 24 * 60 * 60 },
+            },
+          },
+          {
+            urlPattern: /^https:\/\/.*\.firebaseio\.com\/.*/i,
+            handler: 'NetworkFirst',
+            options: { cacheName: 'firebase-cache' },
+          },
+        ],
+      },
+    }),
   ],
-  resolve: { alias: { '@': '/src' } }
+  resolve: { alias: { '@': '/src' } },
 })
