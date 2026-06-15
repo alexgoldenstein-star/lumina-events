@@ -84,7 +84,7 @@ export default function Dashboard() {
             <span>
               <strong>{pendientesAlert} invitado{pendientesAlert !== 1 ? 's' : ''}</strong> sin respuesta hace más de 72hs — se sugiere reenvío
             </span>
-            <Link to="/app/mensajes" className="ml-auto">
+            <Link to="/mensajes" className="ml-auto">
               <Button variant="outline" size="sm">Ver agenda WA</Button>
             </Link>
           </div>
@@ -101,7 +101,7 @@ export default function Dashboard() {
         {/* Próximos eventos */}
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
           <Card>
-            <CardHeader action={<Link to="/app/eventos" className="text-xs text-rose-500 hover:underline">Ver todos</Link>}>
+            <CardHeader action={<Link to="/eventos" className="text-xs text-rose-500 hover:underline">Ver todos</Link>}>
               <CalendarCheck size={15} className="text-rose-400" />
               Próximos eventos
             </CardHeader>
@@ -169,7 +169,7 @@ export default function Dashboard() {
                   </div>
                 </div>
               </Link>
-              <Link to="/app/mensajes">
+              <Link to="/mensajes">
                 <div className="flex items-center gap-3 p-3 rounded-xl border border-ink-100 hover:border-rose-200 hover:bg-rose-50 transition-all cursor-pointer group">
                   <div className="w-8 h-8 rounded-lg bg-emerald-50 group-hover:bg-emerald-100 flex items-center justify-center text-emerald-600 transition-colors">
                     <span className="text-sm">💬</span>
@@ -180,7 +180,7 @@ export default function Dashboard() {
                   </div>
                 </div>
               </Link>
-              <Link to="/app/proveedores">
+              <Link to="/proveedores">
                 <div className="flex items-center gap-3 p-3 rounded-xl border border-ink-100 hover:border-rose-200 hover:bg-rose-50 transition-all cursor-pointer group">
                   <div className="w-8 h-8 rounded-lg bg-gold-50 group-hover:bg-gold-100 flex items-center justify-center text-gold-600 transition-colors">
                     <Building size={15} />

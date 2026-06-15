@@ -35,7 +35,7 @@ export default function EventoDetalle() {
     if (!user || !id) return
     get(eventoRef(user.uid, id)).then(snap => {
       if (snap.exists()) setEvento(snap.val())
-      else navigate('/app/eventos')
+      else navigate('/eventos')
       setLoading(false)
     })
   }, [user, id])
@@ -47,7 +47,7 @@ export default function EventoDetalle() {
     <div className="fade-in">
       <div className="bg-white border-b border-ink-100 px-7 py-4">
         <div className="flex items-center gap-3 mb-3">
-          <Link to="/app/eventos" className="text-ink-400 hover:text-ink-700 transition-colors">
+          <Link to="/eventos" className="text-ink-400 hover:text-ink-700 transition-colors">
             <ArrowLeft size={18} />
           </Link>
           <div className="flex-1 min-w-0">

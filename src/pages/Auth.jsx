@@ -17,7 +17,7 @@ export function Login() {
     setLoading(true); setError('')
     try {
       await login(email, password)
-      navigate('/app')
+      navigate('/dashboard')
     } catch {
       setError('Email o contraseña incorrectos')
     } finally {
@@ -72,7 +72,7 @@ export function Register() {
     setLoading(true); setError('')
     try {
       await register(form.email, form.password, { nombre: form.nombre, orgName: form.orgName })
-      navigate('/app')
+      navigate('/dashboard')
     } catch (err) {
       setError(err.code === 'auth/email-already-in-use' ? 'Ese email ya está registrado' : err.message)
     } finally {

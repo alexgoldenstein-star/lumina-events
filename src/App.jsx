@@ -23,12 +23,17 @@ import Vencimientos   from './pages/Vencimientos'
 import Calendario     from './pages/Calendario'
 import Usuarios       from './pages/Usuarios'
 import PanelCliente   from './pages/PanelCliente'
+import Setup          from './pages/Setup'
 
 function PrivateRoute({ children, permiso }) {
   const { user, profile, loading } = useAuth()
-  if (loading) return <div className="min-h-screen flex items-center justify-center"><Spinner size="lg"/></div>
+  if (loading) return (
+    <div className="min-h-screen flex items-center justify-center bg-nude-50">
+      <Spinner size="lg"/>
+    </div>
+  )
   if (!user) return <Navigate to="/login" replace/>
-  if (permiso && !tienePermiso(profile, permiso)) {
+  if (permiso && profile && !tienePermiso(profile, permiso)) {
     return (
       <AppLayout>
         <div className="flex flex-col items-center justify-center h-64 gap-3">
@@ -43,8 +48,12 @@ function PrivateRoute({ children, permiso }) {
 
 function PublicRoute({ children }) {
   const { user, loading } = useAuth()
-  if (loading) return <div className="min-h-screen flex items-center justify-center"><Spinner size="lg"/></div>
-  if (user) return <Navigate to="/app" replace/>
+  if (loading) return (
+    <div className="min-h-screen flex items-center justify-center bg-nude-50">
+      <Spinner size="lg"/>
+    </div>
+  )
+  if (user) return <Navigate to="/dashboard" replace/>
   return children
 }
 
@@ -54,9 +63,13 @@ function EventoDetalleEdit() {
   const [evento, setEvento] = useState(null)
   useEffect(() => {
     if (!user || !id) return
-    get(eventoRef(user.uid, id)).then(snap => { if (snap.exists()) setEvento(snap.val()) })
+    get(eventoRef(user.uid, id)).then(snap => {
+      if (snap.exists()) setEvento(snap.val())
+    })
   }, [user, id])
-  if (!evento) return <div className="flex items-center justify-center h-64"><Spinner size="lg"/></div>
+  if (!evento) return (
+    <div className="flex items-center justify-center h-64"><Spinner size="lg"/></div>
+  )
   return <EventoForm evento={evento}/>
 }
 
@@ -65,31 +78,34 @@ export default function App() {
     <AuthProvider>
       <BrowserRouter>
         <Routes>
-          {/* Públicas */}
-          <Route path="/"         element={<Landing/>}/>
-          <Route path="/cliente"  element={<PanelCliente/>}/>
+          {/* Públicas — sin login */}
+          <Route path="/"              element={<Landing/>}/>
+          <Route path="/cliente"       element={<PanelCliente/>}/>
+          <Route path="/setup"         element={<Setup/>}/>
           <Route path="/invitar/:code" element={<Invitar/>}/>
-          <Route path="/login"    element={<PublicRoute><Login/></PublicRoute>}/>
-          <Route path="/registro" element={<PublicRoute><Register/></PublicRoute>}/>
+          <Route path="/login"         element={<PublicRoute><Login/></PublicRoute>}/>
+          <Route path="/registro"      element={<PublicRoute><Register/></PublicRoute>}/>
 
-          {/* App privada */}
-          <Route path="/app"                element={<PrivateRoute><Dashboard/></PrivateRoute>}/>
-          <Route path="/app/eventos"        element={<PrivateRoute permiso="verEventos"><Eventos/></PrivateRoute>}/>
-          <Route path="/app/eventos/nuevo"  element={<PrivateRoute permiso="crearEventos"><EventoForm/></PrivateRoute>}/>
-          <Route path="/app/eventos/:id"    element={<PrivateRoute permiso="verEventos"><EventoDetalle/></PrivateRoute>}/>
-          <Route path="/app/eventos/:id/editar" element={<PrivateRoute permiso="crearEventos"><EventoDetalleEdit/></PrivateRoute>}/>
-          <Route path="/app/mensajes"       element={<PrivateRoute permiso="enviarMensajes"><MensajesGlobal/></PrivateRoute>}/>
-          <Route path="/app/proveedores"    element={<PrivateRoute permiso="verProveedores"><Proveedores/></PrivateRoute>}/>
-          <Route path="/app/restricciones"  element={<PrivateRoute permiso="verInvitados"><Restricciones/></PrivateRoute>}/>
-          <Route path="/app/clientes"       element={<PrivateRoute permiso="verClientes"><Clientes/></PrivateRoute>}/>
-          <Route path="/app/vencimientos"   element={<PrivateRoute permiso="verEventos"><Vencimientos/></PrivateRoute>}/>
-          <Route path="/app/calendario"     element={<PrivateRoute permiso="verCalendario"><Calendario/></PrivateRoute>}/>
-          <Route path="/app/usuarios"       element={<PrivateRoute permiso="gestionarUsuarios"><Usuarios/></PrivateRoute>}/>
-          <Route path="/app/configuracion"  element={<PrivateRoute permiso="verConfiguracion"><Configuracion/></PrivateRoute>}/>
+          {/* App privada — rutas limpias sin prefijo /app */}
+          <Route path="/dashboard"           element={<PrivateRoute><Dashboard/></PrivateRoute>}/>
+          <Route path="/eventos"             element={<PrivateRoute permiso="verEventos"><Eventos/></PrivateRoute>}/>
+          <Route path="/eventos/nuevo"       element={<PrivateRoute permiso="crearEventos"><EventoForm/></PrivateRoute>}/>
+          <Route path="/eventos/:id"         element={<PrivateRoute permiso="verEventos"><EventoDetalle/></PrivateRoute>}/>
+          <Route path="/eventos/:id/editar"  element={<PrivateRoute permiso="crearEventos"><EventoDetalleEdit/></PrivateRoute>}/>
+          <Route path="/mensajes"            element={<PrivateRoute permiso="enviarMensajes"><MensajesGlobal/></PrivateRoute>}/>
+          <Route path="/proveedores"         element={<PrivateRoute permiso="verProveedores"><Proveedores/></PrivateRoute>}/>
+          <Route path="/restricciones"       element={<PrivateRoute permiso="verInvitados"><Restricciones/></PrivateRoute>}/>
+          <Route path="/clientes"            element={<PrivateRoute permiso="verClientes"><Clientes/></PrivateRoute>}/>
+          <Route path="/vencimientos"        element={<PrivateRoute permiso="verEventos"><Vencimientos/></PrivateRoute>}/>
+          <Route path="/calendario"          element={<PrivateRoute permiso="verCalendario"><Calendario/></PrivateRoute>}/>
+          <Route path="/usuarios"            element={<PrivateRoute permiso="gestionarUsuarios"><Usuarios/></PrivateRoute>}/>
+          <Route path="/configuracion"       element={<PrivateRoute permiso="verConfiguracion"><Configuracion/></PrivateRoute>}/>
 
+          {/* Cualquier ruta desconocida → landing */}
           <Route path="*" element={<Navigate to="/" replace/>}/>
         </Routes>
       </BrowserRouter>
     </AuthProvider>
   )
 }
+

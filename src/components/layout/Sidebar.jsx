@@ -9,16 +9,16 @@ import { useAuth } from '../../lib/AuthContext'
 import { rutasPermitidas } from '../../lib/roles'
 
 const ICONS = {
-  '/app':               LayoutDashboard,
-  '/app/eventos':       CalendarCheck,
-  '/app/calendario':    CalendarDays,
-  '/app/mensajes':      MessageCircle,
-  '/app/clientes':      Users,
-  '/app/proveedores':   Briefcase,
-  '/app/vencimientos':  Bell,
-  '/app/restricciones': UtensilsCrossed,
-  '/app/usuarios':      UserCog,
-  '/app/configuracion': Settings,
+  '/dashboard':    LayoutDashboard,
+  '/eventos':      CalendarCheck,
+  '/calendario':   CalendarDays,
+  '/mensajes':     MessageCircle,
+  '/clientes':     Users,
+  '/proveedores':  Briefcase,
+  '/vencimientos': Bell,
+  '/restricciones':UtensilsCrossed,
+  '/usuarios':     UserCog,
+  '/configuracion':Settings,
 }
 
 export default function Sidebar() {
@@ -27,20 +27,17 @@ export default function Sidebar() {
 
   async function handleLogout() { await logout(); navigate('/login') }
 
-  // Si profile aún no cargó, mostrar nav completa (admin fallback)
   const effectiveProfile = profile || { role: 'admin' }
-  const rutas = rutasPermitidas(effectiveProfile)
-
-  const mainNav   = rutas.filter(r => r.href !== '/app/configuracion' && r.href !== '/app/usuarios')
-  const bottomNav = rutas.filter(r => r.href === '/app/configuracion' || r.href === '/app/usuarios')
+  const rutas    = rutasPermitidas(effectiveProfile)
+  const mainNav  = rutas.filter(r => r.href !== '/configuracion' && r.href !== '/usuarios')
+  const bottomNav= rutas.filter(r => r.href === '/configuracion' || r.href === '/usuarios')
 
   const initials = profile?.nombre
-    ? profile.nombre.split(' ').map(n => n[0]).join('').slice(0, 2).toUpperCase()
+    ? profile.nombre.split(' ').map(n => n[0]).join('').slice(0,2).toUpperCase()
     : user?.email?.[0]?.toUpperCase() || 'U'
 
   return (
     <aside className="w-56 min-w-56 bg-nude-50 border-r border-nude-200 flex flex-col h-screen sticky top-0">
-      {/* Logo */}
       <div className="px-5 py-6 border-b border-nude-200">
         <div className="flex items-center gap-2.5">
           <div className="w-8 h-8 rounded-lg bg-warm-500 flex items-center justify-center">
@@ -58,17 +55,14 @@ export default function Sidebar() {
         )}
       </div>
 
-      {/* Nav */}
       <nav className="flex-1 px-3 py-4 space-y-0.5 overflow-y-auto">
         {mainNav.map(({ href, label }) => {
           const Icon = ICONS[href] || LayoutDashboard
           return (
-            <NavLink key={href} to={href} end={href === '/app'}
+            <NavLink key={href} to={href} end={href === '/dashboard'}
               className={({ isActive }) => clsx(
                 'flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm transition-all duration-150 group',
-                isActive
-                  ? 'bg-warm-100 text-warm-800 font-medium'
-                  : 'text-ink-500 hover:bg-warm-50 hover:text-warm-700'
+                isActive ? 'bg-warm-100 text-warm-800 font-medium' : 'text-ink-500 hover:bg-warm-50 hover:text-warm-700'
               )}>
               {({ isActive }) => (
                 <>
@@ -81,7 +75,6 @@ export default function Sidebar() {
         })}
       </nav>
 
-      {/* Bottom */}
       <div className="px-3 py-4 border-t border-nude-200 space-y-0.5">
         {bottomNav.map(({ href, label }) => {
           const Icon = ICONS[href] || Settings
@@ -99,7 +92,7 @@ export default function Sidebar() {
           className="w-full flex items-center gap-3 px-3 py-2 rounded-lg text-sm text-ink-500 hover:bg-red-50 hover:text-red-600 transition-all">
           <LogOut size={15} className="text-ink-400"/> Cerrar sesión
         </button>
-        <div className="flex items-center gap-3 px-3 py-3 mt-2">
+        <div className="flex items-center gap-3 px-3 py-3 mt-1">
           <div className="w-8 h-8 rounded-full bg-gradient-to-br from-warm-300 to-warm-600 flex items-center justify-center text-white text-xs font-medium flex-shrink-0">
             {initials}
           </div>
