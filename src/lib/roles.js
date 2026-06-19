@@ -4,6 +4,7 @@ export const ROLES = {
   empleada:  { label:'Empleada',     color:'bg-blue-100 text-blue-700',        icon:'👩‍💼' },
   mensajera: { label:'Mensajes WA',  color:'bg-emerald-100 text-emerald-700',  icon:'💬' },
   proveedor: { label:'Proveedor',    color:'bg-gold-100 text-gold-700',        icon:'🏢' },
+  cliente:   { label:'Cliente',      color:'bg-nude-200 text-ink-600',         icon:'💍' },
 }
 
 export const PERMISOS = {
@@ -18,7 +19,7 @@ export const PERMISOS = {
   editarPresupuestos: { label:'Editar presupuestos',       grupo:'Finanzas'        },
   verGastos:          { label:'Ver gastos',                grupo:'Finanzas'        },
   editarGastos:       { label:'Editar gastos',             grupo:'Finanzas'        },
-  verComisiones:      { label:'Ver comisiones',            grupo:'Finanzas'        },
+  // verComisiones: NO se ofrece como checkbox a nadie — solo admin, ver bloqueo abajo
   verProveedores:     { label:'Ver proveedores',           grupo:'Proveedores'     },
   editarProveedores:  { label:'Editar proveedores',        grupo:'Proveedores'     },
   verCalendario:      { label:'Ver calendario',            grupo:'Herramientas'    },
@@ -34,13 +35,15 @@ export const PERMISOS = {
 }
 
 export const PERMISOS_DEFAULT = {
-  admin: Object.keys(PERMISOS),
+  // Admin: todo + comisiones (la única forma de ver comisiones)
+  admin: [...Object.keys(PERMISOS), 'verComisiones'],
 
+  // Socia: acceso amplio PERO NUNCA comisiones
   socia: [
     'verEventos','crearEventos',
     'verInvitados','editarInvitados','exportarInvitados',
     'enviarMensajes',
-    'verPresupuestos','editarPresupuestos','verGastos','editarGastos','verComisiones',
+    'verPresupuestos','editarPresupuestos','verGastos','editarGastos',
     'verProveedores','editarProveedores',
     'verCalendario','verChecklist','editarChecklist',
     'verMesas','editarMesas','verDocumentos','subirDocumentos',
@@ -66,19 +69,33 @@ export const PERMISOS_DEFAULT = {
     'verEventos',
     'verPresupuestos',
   ],
+
+  // Cliente: vista de su propio evento — sin finanzas internas
+  cliente: [
+    'verEventos',
+    'verCalendario',
+    'verChecklist',
+    'verMesas',
+    'verDocumentos',
+  ],
 }
 
 /**
  * Verifica si un usuario tiene un permiso específico.
- * - Admin siempre tiene todo
- * - Otros roles: verificar array permisos (personalizado o default del rol)
+ * REGLA DE ORO: 'verComisiones' está bloqueado para TODOS excepto admin,
+ * sin importar qué diga el array de permisos personalizado guardado en DB.
+ * Esto evita que un admin distraído tilde el checkbox por error.
  */
 export function tienePermiso(profile, permiso) {
   if (!profile) return false
-  // Admin tiene acceso a todo sin restricciones
+
+  // Bloqueo absoluto de comisiones — solo admin, siempre
+  if (permiso === 'verComisiones') {
+    return profile.role === 'admin'
+  }
+
   if (profile.role === 'admin') return true
-  // Para otros roles, verificar array de permisos
-  // Usar permisos personalizados si existen, sino los del rol por defecto
+
   const permisos = (profile.permisos && profile.permisos.length > 0)
     ? profile.permisos
     : (PERMISOS_DEFAULT[profile.role] || [])
@@ -102,4 +119,3 @@ export function rutasPermitidas(profile) {
     { show: t('verConfiguracion'),  href:'/configuracion',label:'Configuración'},
   ].filter(r => r.show)
 }
-

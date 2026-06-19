@@ -63,7 +63,7 @@ export default function Landing() {
     <div className="min-h-screen bg-white">
 
       {/* ── Navbar ─────────────────────────────────────────────────────── */}
-      <nav className="fixed top-0 left-0 right-0 z-50 bg-white/95 backdrop-blur-sm border-b border-nude-100">
+      <nav className="fixed top-0 left-0 right-0 z-50 bg-white border-b border-nude-100">
         <div className="max-w-6xl mx-auto px-6 h-16 flex items-center justify-between">
           <LogoJR size="sm"/>
           <div className="hidden md:flex items-center gap-8 text-[11px] tracking-widest uppercase text-ink-400">
@@ -274,8 +274,8 @@ export default function Landing() {
             </p>
             <div className="space-y-5">
               {[
-                { href:'https://wa.me/5491112345678', Icon:MessageCircle, label:'WhatsApp', sub:'+54 9 11 1234-5678' },
-                { href:'mailto:hola@jazminrosenberg.com.ar', Icon:()=><span className="text-sm font-light">@</span>, label:'Email', sub:'hola@jazminrosenberg.com.ar' },
+                { href:'https://wa.me/5491157092994', Icon:MessageCircle, label:'WhatsApp', sub:'+54 9 11 5709-2994' },
+                { href:'mailto:Jazminrosenbergeventos@gmail.com', Icon:()=><span className="text-sm font-light">@</span>, label:'Email', sub:'Jazminrosenbergeventos@gmail.com' },
                 { href:'https://instagram.com/jazminrosenberg.eventos', Icon:Instagram, label:'Instagram', sub:'@jazminrosenberg.eventos' },
               ].map(({ href, Icon, label, sub })=>(
                 <a key={label} href={href} target={href.startsWith('http')?'_blank':undefined} rel="noreferrer"
@@ -313,7 +313,7 @@ export default function Landing() {
               <textarea rows={4} placeholder="Fecha, cantidad de personas, estilo que imaginás..."
                 className="w-full px-4 py-3 text-sm border border-nude-300 bg-white outline-none focus:border-ink-900 transition-colors resize-none"/>
             </div>
-            <a href="https://wa.me/5491112345678?text=Hola%20Jazmin!%20Me%20contacto%20desde%20tu%20web."
+            <a href="https://wa.me/5491157092994?text=Hola%20Jazmin!%20Me%20contacto%20desde%20tu%20web."
               target="_blank" rel="noreferrer"
               className="flex items-center justify-center gap-2 w-full py-4 bg-ink-900 text-white text-[11px] tracking-widest uppercase hover:bg-ink-700 transition-colors">
               <MessageCircle size={15}/> Enviar por WhatsApp
@@ -330,7 +330,7 @@ export default function Landing() {
           <LogoJR size="lg" light className="mb-6"/>
           <div className="w-12 h-px bg-white/40 mx-auto mb-6"/>
           <p className="text-white/75 mb-8 font-light">El evento que siempre imaginaste está más cerca de lo que creés</p>
-          <a href="https://wa.me/5491112345678" target="_blank" rel="noreferrer"
+          <a href="https://wa.me/5491157092994" target="_blank" rel="noreferrer"
             className="inline-flex items-center gap-2 px-10 py-4 bg-white text-ink-900 text-[11px] tracking-widest uppercase hover:bg-nude-100 transition-colors">
             <MessageCircle size={14}/> Escribinos hoy
           </a>
@@ -350,7 +350,7 @@ export default function Landing() {
           <div className="flex gap-3">
             {[
               { href:'https://instagram.com/jazminrosenberg.eventos', Icon:Instagram },
-              { href:'https://wa.me/5491112345678', Icon:MessageCircle },
+              { href:'https://wa.me/5491157092994', Icon:MessageCircle },
             ].map(({ href, Icon })=>(
               <a key={href} href={href} target="_blank" rel="noreferrer"
                 className="w-9 h-9 border border-white/20 flex items-center justify-center hover:border-white/60 transition-colors">
@@ -363,6 +363,18 @@ export default function Landing() {
           © 2026 Jazmin Rosenberg · Organización de Eventos
         </div>
       </footer>
+
+      {/* Botón flotante de WhatsApp */}
+      <a
+        href="https://wa.me/5491157092994?text=Hola%20Jazmin!%20Quiero%20consultar%20sobre%20un%20evento."
+        target="_blank" rel="noreferrer"
+        className="fixed bottom-6 right-6 z-50 w-14 h-14 bg-[#25D366] rounded-full shadow-lg flex items-center justify-center hover:scale-105 transition-transform"
+        aria-label="Contactar por WhatsApp"
+      >
+        <svg viewBox="0 0 32 32" className="w-7 h-7 fill-white">
+          <path d="M16.001 3C9.097 3 3.5 8.597 3.5 15.5c0 2.42.687 4.68 1.875 6.594L3 29l7.094-2.344A12.42 12.42 0 0016 28c6.904 0 12.5-5.597 12.5-12.5S22.905 3 16.001 3zm0 22.75a10.2 10.2 0 01-5.205-1.43l-.373-.221-3.86 1.276 1.297-3.762-.243-.386a10.19 10.19 0 01-1.567-5.477c0-5.643 4.593-10.236 10.25-10.236 5.642 0 10.235 4.593 10.235 10.236 0 5.642-4.593 10.235-10.25 10.235zm5.614-7.658c-.307-.154-1.817-.896-2.099-1-.281-.103-.486-.154-.69.154-.205.308-.792 1-.972 1.205-.179.205-.358.23-.665.077-.307-.154-1.296-.477-2.469-1.522-.913-.814-1.529-1.82-1.708-2.128-.179-.307-.019-.473.135-.626.139-.138.307-.358.46-.538.155-.18.205-.307.307-.512.103-.205.052-.385-.026-.539-.077-.154-.69-1.664-.946-2.28-.249-.6-.502-.518-.69-.527l-.587-.011c-.205 0-.538.077-.82.385-.281.308-1.075 1.05-1.075 2.561 0 1.512 1.1 2.972 1.254 3.177.154.205 2.166 3.31 5.249 4.642.733.317 1.305.506 1.751.648.736.234 1.405.2 1.934.122.59-.088 1.817-.743 2.073-1.461.256-.717.256-1.333.18-1.461-.077-.128-.282-.205-.589-.359z"/>
+        </svg>
+      </a>
     </div>
   )
 }

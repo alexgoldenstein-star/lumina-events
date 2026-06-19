@@ -41,7 +41,8 @@ const emptyForm = {
 }
 
 export default function Proveedores() {
-  const { user } = useAuth()
+  const { user, can } = useAuth()
+  const puedeVerComisiones = can('verComisiones')
   const [proveedores, setProveedores] = useState([])
   const [loading, setLoading] = useState(true)
   const [search, setSearch] = useState('')
@@ -171,7 +172,7 @@ export default function Proveedores() {
                         ))}
                       </div>
                     )}
-                    {!isNaN(comisionNum) && comisionNum > 0 && (
+                    {puedeVerComisiones && !isNaN(comisionNum) && comisionNum > 0 && (
                       <div className="inline-flex items-center gap-1.5 bg-sage-50 text-sage-700 text-xs px-2.5 py-1 rounded-lg font-medium mb-3">
                         Comisión {comisionNum}%
                       </div>
@@ -227,7 +228,9 @@ export default function Proveedores() {
               <label className="block text-xs font-medium text-ink-500 mb-2">Rating</label>
               <StarRating value={form.rating} onChange={v => setField('rating', v)} />
             </div>
-            <Input label="Comisión %" placeholder="10" value={form.comision} onChange={e => setField('comision', e.target.value)} />
+            {puedeVerComisiones && (
+              <Input label="Comisión % (privado)" placeholder="10" value={form.comision} onChange={e => setField('comision', e.target.value)} />
+            )}
           </div>
           <Textarea label="Notas" placeholder="Especialidades, disponibilidad, condiciones..." value={form.notas} onChange={e => setField('notas', e.target.value)} />
           <Textarea label="Trabajos anteriores" placeholder="Eventos en los que trabajaron juntos..." value={form.trabajosAnteriores} onChange={e => setField('trabajosAnteriores', e.target.value)} rows={2} />

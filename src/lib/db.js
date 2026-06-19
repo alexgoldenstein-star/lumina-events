@@ -198,9 +198,24 @@ export const clientesRef = (uid) => ref(db,`users/${uid}/clientes`)
 export const clienteRef  = (uid,cid) => ref(db,`users/${uid}/clientes/${cid}`)
 export async function createCliente(uid, data) {
   const r = push(clientesRef(uid))
-  const c = { ...data, id: r.key, createdAt: ts(),
-    accessCode: Math.random().toString(36).slice(2,8).toUpperCase() }
-  await set(r, c); return c
+  const code = Math.random().toString(36).slice(2,8).toUpperCase()
+  const c = { ...data, id: r.key, createdAt: ts(), accessCode: code }
+  await set(r, c)
+  // Guardar también en el nodo público para que /cliente pueda verificarlo
+  if (data.eventoId) {
+    await set(ref(db, `accessCodes/${code}`), {
+      ownerUid: uid,
+      eventoId: data.eventoId,
+      clienteId: r.key,
+      nombre: data.nombre || '',
+    })
+  }
+  return c
+}
+export async function generarCodigoCliente(uid, eventoId, nombre) {
+  const code = Math.random().toString(36).slice(2,8).toUpperCase()
+  await set(ref(db, `accessCodes/${code}`), { ownerUid: uid, eventoId, nombre: nombre||'' })
+  return code
 }
 export async function updateCliente(uid, cid, data) {
   await update(clienteRef(uid,cid), { ...data, updatedAt: ts() })

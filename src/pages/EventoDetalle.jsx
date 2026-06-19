@@ -1,8 +1,8 @@
 import { useEffect, useState } from 'react'
 import { useParams, Link, useNavigate } from 'react-router-dom'
 import { ArrowLeft, Users, MessageCircle, Receipt, FileText,
-  Edit, CheckSquare, LayoutGrid, BarChart2 } from 'lucide-react'
-import { get, ref, onValue, off } from 'firebase/database'
+  Edit, CheckSquare, LayoutGrid, BarChart2, Heart, Copy, Check } from 'lucide-react'
+import { get, ref, onValue, off, set } from 'firebase/database'
 import { db } from '../lib/firebase'
 import { useAuth } from '../lib/AuthContext'
 import { Button, Spinner } from '../components/ui'
@@ -32,6 +32,10 @@ export default function EventoDetalle() {
   const [loading,    setLoading] = useState(true)
   const [tab,        setTab]     = useState('invitados')
   const [notFound,   setNotFound]= useState(false)
+  const [showClienteModal, setShowClienteModal] = useState(false)
+  const [clienteCode, setClienteCode] = useState('')
+  const [generandoCode, setGenerandoCode] = useState(false)
+  const [copiedCode, setCopiedCode] = useState(false)
 
   useEffect(() => {
     if (!user || !id) return
@@ -93,6 +97,31 @@ export default function EventoDetalle() {
   // Determinar el ownerUid del evento para las operaciones
   const eventoOwnerUid = evento._ownerUid || teamOwner || user.uid
 
+  async function handleGenerarCodigo() {
+    setGenerandoCode(true)
+    try {
+      // Si ya existe un código guardado en el evento, reusarlo
+      let code = evento.clienteAccessCode
+      if (!code) {
+        code = Math.random().toString(36).slice(2,8).toUpperCase()
+        await set(ref(db, `accessCodes/${code}`), {
+          ownerUid: eventoOwnerUid, eventoId: id, nombre: evento.clienteNombre || evento.nombre,
+        })
+        await set(ref(db, `users/${eventoOwnerUid}/eventos/${id}/clienteAccessCode`), code)
+      }
+      setClienteCode(code)
+    } catch(e) { console.error(e) }
+    setGenerandoCode(false)
+  }
+
+  function copiarLinkCliente() {
+    const url = `${window.location.origin}/cliente`
+    const text = `¡Hola! Acá tenés el acceso a tu panel de evento "${evento.nombre}":\n\n${url}\n\nCódigo de acceso: ${clienteCode}`
+    navigator.clipboard.writeText(text)
+    setCopiedCode(true)
+    setTimeout(() => setCopiedCode(false), 2000)
+  }
+
   return (
     <div className="fade-in">
       <div className="bg-white border-b border-nude-200 px-4 md:px-7 py-4">
@@ -111,6 +140,12 @@ export default function EventoDetalle() {
           <Link to={`/eventos/${id}/editar`} className="flex-shrink-0">
             <Button variant="outline" size="sm"><Edit size={13}/> Editar</Button>
           </Link>
+          <Button
+            variant="outline" size="sm" className="flex-shrink-0"
+            onClick={() => { setShowClienteModal(true); setClienteCode(evento.clienteAccessCode || '') }}
+          >
+            <Heart size={13}/> Panel cliente
+          </Button>
         </div>
 
         {/* Stats */}
@@ -148,6 +183,49 @@ export default function EventoDetalle() {
         {tab==='mesas'       && <LayoutMesas   eventoId={id} eventoOwnerUid={eventoOwnerUid}/>}
         {tab==='documentos'  && <Documentos    eventoId={id} eventoOwnerUid={eventoOwnerUid} evento={evento}/>}
       </div>
+
+      {/* Modal panel cliente */}
+      {showClienteModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/40 backdrop-blur-sm" onClick={()=>setShowClienteModal(false)}>
+          <div className="bg-white rounded-2xl shadow-xl w-full max-w-md overflow-hidden" onClick={e=>e.stopPropagation()}>
+            <div className="px-6 py-4 border-b border-nude-200 flex items-center justify-between">
+              <h2 className="text-base font-medium text-ink-800 flex items-center gap-2">
+                <Heart size={16} className="text-warm-500"/> Panel del cliente
+              </h2>
+              <button onClick={()=>setShowClienteModal(false)} className="text-ink-400 hover:text-ink-700">✕</button>
+            </div>
+            <div className="p-6 space-y-4">
+              <p className="text-sm text-ink-500">
+                Generá un código de acceso para que <strong>{evento.clienteNombre || 'el cliente'}</strong> pueda
+                ver el avance de su evento: checklist, mesas, fechas clave y presupuesto general.
+              </p>
+
+              {clienteCode ? (
+                <>
+                  <div className="p-4 bg-nude-50 border border-nude-200 rounded-xl text-center">
+                    <p className="text-xs text-ink-400 mb-2 uppercase tracking-wide">Código de acceso</p>
+                    <code className="text-2xl font-mono font-bold text-ink-800 tracking-[0.3em] block bg-white py-3 rounded-lg border border-nude-200">
+                      {clienteCode}
+                    </code>
+                    <p className="text-xs text-ink-400 mt-2">Panel: {window.location.origin}/cliente</p>
+                  </div>
+                  <Button className="w-full justify-center" onClick={copiarLinkCliente}>
+                    {copiedCode ? <><Check size={14}/> Copiado</> : <><Copy size={14}/> Copiar mensaje para enviar</>}
+                  </Button>
+                </>
+              ) : (
+                <Button className="w-full justify-center" onClick={handleGenerarCodigo} loading={generandoCode}>
+                  Generar código de acceso
+                </Button>
+              )}
+
+              <p className="text-xs text-ink-400 bg-warm-50 rounded-lg p-3">
+                ℹ️ El cliente NO ve comisiones, costos internos ni honorarios — solo el progreso general del evento.
+              </p>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   )
 }
